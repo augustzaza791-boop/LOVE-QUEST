@@ -1,0 +1,3142 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>LOVE QUEST: ภารกิจพิชิตใจ 3 ด่าน 💘</title>
+
+  <!-- โหลดฟอนต์ภาษาไทย Prompt จาก Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    /* =========================================================================
+       1. ธีมสี Neon-Arcade Twilight และค่าเริ่มต้น (CSS Variables & Reset)
+    ========================================================================= */
+    :root {
+      --bg-deep: #0b051d;
+      --bg-indigo: #1a0b38;
+      --bg-violet: #2d1259;
+      --neon-pink: #ff4da6;
+      --neon-pink-soft: #ff85c1;
+      --neon-cyan: #00f0ff;
+      --neon-gold: #ffd166;
+      --neon-green: #2ee59d;
+      --neon-danger: #ff3b5c;
+      --glass-bg: rgba(20, 12, 46, 0.72);
+      --glass-border: rgba(255, 133, 193, 0.32);
+      --text-main: #fff5fb;
+      --text-muted: #c8b8e8;
+      --font-main: 'Prompt', system-ui, -apple-system, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      font-family: var(--font-main);
+      color: var(--text-main);
+      background: radial-gradient(circle at 20% 15%, #371568 0%, #180a36 45%, #090418 100%);
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    /* =========================================================================
+       2. พื้นหลังท้องฟ้ายามค่ำคืนและดวงดาวระยิบระยับ + แคนวาสพลุฉลอง
+    ========================================================================= */
+    #starfield {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    .star {
+      position: absolute;
+      border-radius: 50%;
+      background: #ffffff;
+      opacity: 0.25;
+      animation: twinkle ease-in-out infinite;
+    }
+
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.18; transform: scale(0.8); }
+      50% { opacity: 0.95; transform: scale(1.25); }
+    }
+
+    #fireworks-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 5;
+      display: none;
+    }
+
+    /* แสงแดงกระพริบขอบจอเมื่อโดนดาเมจ */
+    #damage-flash {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 60;
+      background: radial-gradient(circle, transparent 45%, rgba(255, 43, 86, 0.55) 100%);
+      opacity: 0;
+      transition: opacity 0.14s ease-out;
+    }
+
+    #damage-flash.active {
+      opacity: 1;
+    }
+
+    /* =========================================================================
+       3. ปุ่มเปิด/ปิดเสียงมุมขวาบน
+    ========================================================================= */
+    .mute-btn {
+      position: fixed;
+      top: max(10px, env(safe-area-inset-top));
+      right: 12px;
+      z-index: 120;
+      background: rgba(20, 12, 46, 0.82);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1.5px solid rgba(0, 240, 255, 0.45);
+      color: var(--text-main);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-family: var(--font-main);
+      font-size: 0.82rem;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      box-shadow: 0 0 14px rgba(0, 240, 255, 0.2);
+      transition: transform 0.18s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .mute-btn:hover {
+      border-color: var(--neon-pink);
+      box-shadow: 0 0 16px rgba(255, 77, 166, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .mute-btn:active {
+      transform: scale(0.94);
+    }
+
+    /* =========================================================================
+       4. คอนเทนเนอร์หลักและการ์ด Glassmorphism
+    ========================================================================= */
+    .app-shell {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      height: 100dvh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 12px;
+    }
+
+    .screen {
+      display: none;
+      width: 100%;
+      max-width: 480px;
+      height: 100%;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transform: translateY(10px) scale(0.98);
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+
+    .screen.active {
+      display: flex;
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    .glass-card {
+      width: 100%;
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1.5px solid var(--glass-border);
+      border-radius: 26px;
+      padding: 24px 20px;
+      box-shadow:
+        0 18px 45px rgba(0, 0, 0, 0.45),
+        0 0 28px rgba(255, 77, 166, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      text-align: center;
+      position: relative;
+    }
+
+    /* =========================================================================
+       5. สไตล์ปุ่ม Arcade Neon
+    ========================================================================= */
+    .btn {
+      font-family: var(--font-main);
+      font-weight: 700;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      outline: none;
+      transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, filter 0.2s ease;
+    }
+
+    .btn-neon-pink {
+      background: linear-gradient(135deg, #ff5eb3 0%, #ff2a85 60%, #d4147a 100%);
+      color: #ffffff;
+      padding: 13px 28px;
+      font-size: 1.05rem;
+      box-shadow: 0 0 22px rgba(255, 42, 133, 0.55), 0 4px 0 #940b52;
+    }
+
+    .btn-neon-pink:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 0 30px rgba(255, 77, 166, 0.78), 0 5px 0 #940b52;
+    }
+
+    .btn-neon-pink:active {
+      transform: translateY(2px) scale(0.98);
+      box-shadow: 0 0 14px rgba(255, 42, 133, 0.45), 0 1px 0 #940b52;
+    }
+
+    .btn-neon-cyan {
+      background: linear-gradient(135deg, #1ae8ff 0%, #00b8e6 100%);
+      color: #081226;
+      padding: 12px 24px;
+      font-size: 0.98rem;
+      box-shadow: 0 0 18px rgba(0, 240, 255, 0.45), 0 4px 0 #007799;
+    }
+
+    .btn-neon-cyan:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 26px rgba(0, 240, 255, 0.7), 0 5px 0 #007799;
+    }
+
+    .btn-neon-cyan:active {
+      transform: translateY(2px);
+    }
+
+    .btn-ghost {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1.5px solid rgba(255, 255, 255, 0.25);
+      color: var(--text-main);
+      padding: 11px 22px;
+      font-size: 0.95rem;
+    }
+
+    .btn-ghost:hover {
+      background: rgba(255, 255, 255, 0.16);
+    }
+
+    /* =========================================================================
+       6. หน้าแรก (Title Screen)
+    ========================================================================= */
+    .arcade-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 77, 166, 0.16);
+      border: 1px solid rgba(255, 77, 166, 0.55);
+      color: #ffb8dc;
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 5px 14px;
+      border-radius: 999px;
+      margin-bottom: 12px;
+      box-shadow: 0 0 14px rgba(255, 77, 166, 0.25);
+    }
+
+    .logo-title {
+      font-size: clamp(1.7rem, 6.2vw, 2.3rem);
+      font-weight: 800;
+      line-height: 1.2;
+      background: linear-gradient(90deg, #ff7ec3 0%, #ffffff 48%, #5cf2ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 14px rgba(255, 77, 166, 0.5));
+      margin-bottom: 6px;
+    }
+
+    .logo-subtitle {
+      font-size: 0.96rem;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+
+    .difficulty-badge {
+      display: inline-block;
+      background: linear-gradient(90deg, rgba(255, 59, 92, 0.24), rgba(255, 209, 102, 0.22));
+      border: 1px solid rgba(255, 209, 102, 0.65);
+      color: var(--neon-gold);
+      font-weight: 600;
+      font-size: 0.86rem;
+      padding: 6px 14px;
+      border-radius: 12px;
+      margin-bottom: 18px;
+      box-shadow: 0 0 15px rgba(255, 209, 102, 0.2);
+    }
+
+    .stages-overview {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      margin-bottom: 22px;
+      text-align: left;
+    }
+
+    .stage-preview-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.11);
+      border-radius: 16px;
+      padding: 10px 12px;
+    }
+
+    .stage-preview-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.35rem;
+      flex-shrink: 0;
+      background: rgba(255, 77, 166, 0.16);
+      border: 1px solid rgba(255, 77, 166, 0.35);
+    }
+
+    .stage-preview-text h3 {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 2px;
+    }
+
+    .stage-preview-text p {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.35;
+    }
+
+    /* =========================================================================
+       7. โครงสร้างหน้าเล่นเกมแคนวาส (Stage 1 & Stage 3)
+    ========================================================================= */
+    .arcade-screen {
+      justify-content: flex-start;
+      padding-top: 38px; /* เว้นที่ให้ปุ่มเสียงด้านบน */
+      gap: 8px;
+      max-width: 440px;
+    }
+
+    .arcade-hud {
+      width: 100%;
+      background: rgba(18, 10, 42, 0.85);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1.5px solid rgba(0, 240, 255, 0.3);
+      border-radius: 18px;
+      padding: 10px 14px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+      flex-shrink: 0;
+    }
+
+    .hud-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+
+    .hud-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .stage-pill {
+      color: var(--neon-cyan);
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+
+    .hp-hearts {
+      font-size: 1rem;
+      letter-spacing: 2px;
+    }
+
+    .bar-track {
+      width: 100%;
+      height: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 999px;
+      overflow: hidden;
+      padding: 2px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+    }
+
+    .bar-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      transition: width 0.22s ease;
+    }
+
+    .bar-fill.pink {
+      background: linear-gradient(90deg, #ff7ec3, #ff2a85, #ffd166);
+      box-shadow: 0 0 12px rgba(255, 77, 166, 0.7);
+    }
+
+    .bar-fill.boss {
+      background: linear-gradient(90deg, #ff3b5c, #ff8800, #ff2a85);
+      box-shadow: 0 0 12px rgba(255, 59, 92, 0.75);
+    }
+
+    .bar-fill.timer {
+      background: linear-gradient(90deg, #00f0ff, #2ee59d);
+      box-shadow: 0 0 12px rgba(0, 240, 255, 0.6);
+    }
+
+    .bar-fill.timer.low {
+      background: linear-gradient(90deg, #ff3b5c, #ff8800);
+      box-shadow: 0 0 12px rgba(255, 59, 92, 0.8);
+    }
+
+    .canvas-stage-wrap {
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    .game-canvas {
+      display: block;
+      height: 100%;
+      width: auto;
+      max-width: 100%;
+      max-height: 100%;
+      aspect-ratio: 360 / 520;
+      border-radius: 22px;
+      border: 2px solid rgba(255, 77, 166, 0.45);
+      background: radial-gradient(circle at 50% 25%, #23104c 0%, #100728 65%, #070314 100%);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55), 0 0 24px rgba(255, 77, 166, 0.2);
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      cursor: crosshair;
+    }
+
+    .controls-hint {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      text-align: center;
+      flex-shrink: 0;
+      opacity: 0.88;
+    }
+
+    /* =========================================================================
+       8. ด่าน 2: ปลดล็อกความทรงจำ (4x4 Memory Match)
+    ========================================================================= */
+    #screen-stage2 {
+      justify-content: flex-start;
+      padding-top: 38px;
+      gap: 10px;
+      max-width: 440px;
+    }
+
+    .memory-status-banner {
+      width: 100%;
+      text-align: center;
+      font-size: 0.92rem;
+      font-weight: 600;
+      min-height: 26px;
+      color: var(--neon-gold);
+      text-shadow: 0 0 10px rgba(255, 209, 102, 0.5);
+      position: relative;
+    }
+
+    .memory-grid-wrap {
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .memory-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 9px;
+      width: min(100%, 390px);
+      aspect-ratio: 1 / 1;
+      max-height: 100%;
+    }
+
+    .mem-card {
+      position: relative;
+      perspective: 700px;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .mem-card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 0.36s cubic-bezier(0.34, 1.4, 0.64, 1);
+    }
+
+    .mem-card.flipped .mem-card-inner,
+    .mem-card.matched .mem-card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .mem-card.mismatch .mem-card-inner {
+      animation: cardShake 0.4s ease;
+    }
+
+    @keyframes cardShake {
+      0%, 100% { transform: rotateY(180deg) translateX(0); }
+      25% { transform: rotateY(180deg) translateX(-6px); }
+      50% { transform: rotateY(180deg) translateX(6px); }
+      75% { transform: rotateY(180deg) translateX(-4px); }
+    }
+
+    .mem-face {
+      position: absolute;
+      inset: 0;
+      border-radius: 16px;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mem-front {
+      background: linear-gradient(145deg, rgba(66, 29, 128, 0.92), rgba(29, 13, 66, 0.96));
+      border: 1.5px solid rgba(0, 240, 255, 0.45);
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      font-size: 1.35rem;
+      color: rgba(255, 133, 193, 0.8);
+    }
+
+    .mem-front::after {
+      content: "✦";
+      font-size: 1.3rem;
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.8);
+    }
+
+    .mem-back {
+      transform: rotateY(180deg);
+      background: linear-gradient(145deg, rgba(255, 77, 166, 0.22), rgba(45, 18, 92, 0.95));
+      border: 2px solid var(--neon-pink);
+      box-shadow: 0 0 16px rgba(255, 77, 166, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      font-size: clamp(1.6rem, 7vw, 2.3rem);
+    }
+
+    .mem-card.matched .mem-back {
+      background: linear-gradient(145deg, rgba(46, 229, 157, 0.25), rgba(16, 48, 66, 0.92));
+      border-color: var(--neon-green);
+      box-shadow: 0 0 18px rgba(46, 229, 157, 0.55);
+      animation: matchPop 0.38s ease;
+    }
+
+    @keyframes matchPop {
+      0% { transform: rotateY(180deg) scale(1); }
+      50% { transform: rotateY(180deg) scale(1.1); }
+      100% { transform: rotateY(180deg) scale(1); }
+    }
+
+    /* ข้อความลอย +2 วินาที! */
+    .time-bonus-float {
+      position: fixed;
+      left: 50%;
+      top: 120px;
+      transform: translateX(-50%);
+      background: rgba(14, 48, 42, 0.92);
+      border: 1.5px solid var(--neon-green);
+      color: var(--neon-green);
+      font-weight: 700;
+      font-size: 0.96rem;
+      padding: 6px 16px;
+      border-radius: 999px;
+      box-shadow: 0 0 18px rgba(46, 229, 157, 0.5);
+      pointer-events: none;
+      z-index: 95;
+      animation: bonusFloatUp 1.15s ease-out forwards;
+    }
+
+    @keyframes bonusFloatUp {
+      0% { opacity: 0; transform: translate(-50%, 10px) scale(0.8); }
+      20% { opacity: 1; transform: translate(-50%, 0) scale(1.06); }
+      100% { opacity: 0; transform: translate(-50%, -44px) scale(0.96); }
+    }
+
+    /* =========================================================================
+       9. หน้า Finale: คำถามสุดท้าย + ใบประกาศ & จดหมายบอกรัก
+    ========================================================================= */
+    .finale-question-card {
+      overflow: hidden;
+    }
+
+    .dodging-arena {
+      position: relative;
+      width: 100%;
+      height: 175px;
+      margin-top: 14px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px dashed rgba(255, 133, 193, 0.3);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      overflow: hidden;
+      padding: 12px;
+    }
+
+    #btn-finale-yes {
+      z-index: 15;
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    #btn-finale-no {
+      z-index: 20;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1.5px solid rgba(255, 255, 255, 0.3);
+      color: #e6d9ff;
+      padding: 10px 20px;
+      font-size: 0.92rem;
+      white-space: nowrap;
+      transition: left 0.2s cubic-bezier(0.22, 1, 0.36, 1), top 0.2s cubic-bezier(0.22, 1, 0.36, 1), transform 0.2s ease;
+    }
+
+    #btn-finale-no.dodging {
+      position: absolute;
+      margin: 0;
+    }
+
+    .finale-hint {
+      margin-top: 12px;
+      min-height: 22px;
+      font-size: 0.86rem;
+      color: var(--neon-gold);
+    }
+
+    /* ใบประกาศและจดหมายบอกรัก */
+    .certificate-card {
+      max-height: calc(100dvh - 54px);
+      overflow-y: auto;
+      padding: 20px 18px;
+      text-align: center;
+      border-color: rgba(255, 209, 102, 0.55);
+      box-shadow: 0 0 36px rgba(255, 77, 166, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+
+    .certificate-card::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    .certificate-card::-webkit-scrollbar-thumb {
+      background: rgba(255, 133, 193, 0.45);
+      border-radius: 999px;
+    }
+
+    .cert-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 209, 102, 0.35);
+      border-radius: 18px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      text-align: left;
+    }
+
+    .rank-badge {
+      width: 62px;
+      height: 62px;
+      border-radius: 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .rank-badge.rank-S {
+      background: linear-gradient(135deg, #ffe27a, #ff9f1c);
+      color: #2b1300;
+      box-shadow: 0 0 22px rgba(255, 209, 102, 0.75);
+    }
+
+    .rank-badge.rank-A {
+      background: linear-gradient(135deg, #ff7ec3, #ff2a85);
+      color: #ffffff;
+      box-shadow: 0 0 22px rgba(255, 77, 166, 0.7);
+    }
+
+    .rank-badge.rank-B {
+      background: linear-gradient(135deg, #48f5ff, #0099cc);
+      color: #051c2c;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.65);
+    }
+
+    .rank-label {
+      font-size: 0.62rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      opacity: 0.85;
+      margin-bottom: 2px;
+    }
+
+    .rank-letter {
+      font-size: 2rem;
+    }
+
+    .cert-stats {
+      flex: 1;
+    }
+
+    .cert-stats-title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--neon-gold);
+      margin-bottom: 4px;
+    }
+
+    .cert-stats-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .stat-chip {
+      background: rgba(0, 0, 0, 0.28);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      padding: 3px 10px;
+      color: #fff;
+    }
+
+    .letter-box {
+      background: rgba(255, 245, 251, 0.07);
+      border: 1px solid rgba(255, 133, 193, 0.35);
+      border-radius: 18px;
+      padding: 15px 16px;
+      text-align: left;
+      margin-bottom: 14px;
+    }
+
+    .letter-title {
+      font-size: 1.12rem;
+      font-weight: 700;
+      color: var(--neon-pink-soft);
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .letter-box p {
+      font-size: 0.88rem;
+      line-height: 1.7;
+      color: #f6ecff;
+      margin-bottom: 9px;
+    }
+
+    .letter-box p:last-of-type {
+      margin-bottom: 6px;
+    }
+
+    .letter-sign {
+      text-align: right;
+      font-weight: 700;
+      font-size: 0.92rem;
+      color: var(--neon-gold);
+      margin-top: 6px;
+    }
+
+    .coupon-box {
+      background: linear-gradient(135deg, rgba(255, 209, 102, 0.16), rgba(255, 77, 166, 0.18));
+      border: 2px dashed var(--neon-gold);
+      border-radius: 18px;
+      padding: 13px 14px;
+      margin-bottom: 16px;
+      box-shadow: 0 0 20px rgba(255, 209, 102, 0.2);
+    }
+
+    .coupon-text {
+      font-size: 0.94rem;
+      font-weight: 700;
+      color: #fff4c9;
+      margin-bottom: 4px;
+      line-height: 1.45;
+    }
+
+    .coupon-note {
+      font-size: 0.76rem;
+      color: var(--neon-cyan);
+    }
+
+    /* =========================================================================
+       10. โมดอลแจ้งผลระหว่างด่าน (Stage Clear / Game Over Modal)
+    ========================================================================= */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(7, 3, 20, 0.78);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      padding: 18px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+      animation: modalFadeIn 0.25s ease;
+    }
+
+    @keyframes modalFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 370px;
+      background: linear-gradient(160deg, rgba(35, 16, 74, 0.96), rgba(16, 8, 38, 0.98));
+      border: 2px solid var(--neon-pink);
+      border-radius: 26px;
+      padding: 26px 22px;
+      text-align: center;
+      box-shadow: 0 0 38px rgba(255, 77, 166, 0.35);
+      animation: modalPopIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .modal-card.danger {
+      border-color: var(--neon-danger);
+      box-shadow: 0 0 38px rgba(255, 59, 92, 0.35);
+    }
+
+    @keyframes modalPopIn {
+      from { transform: scale(0.86) translateY(12px); opacity: 0; }
+      to { transform: scale(1) translateY(0); opacity: 1; }
+    }
+
+    .modal-emoji {
+      font-size: 3.2rem;
+      margin-bottom: 8px;
+      display: inline-block;
+    }
+
+    .modal-title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      color: #ffffff;
+    }
+
+    .modal-desc {
+      font-size: 0.92rem;
+      line-height: 1.6;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    @media (max-height: 670px) {
+      .glass-card { padding: 18px 16px; }
+      .stage-preview-item { padding: 8px 10px; }
+      .stages-overview { gap: 7px; margin-bottom: 16px; }
+      .memory-grid { gap: 7px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- พื้นหลังดาวระยิบระยับ -->
+  <div id="starfield" aria-hidden="true"></div>
+
+  <!-- แคนวาสพลุฉลองตอนจบ -->
+  <canvas id="fireworks-canvas" aria-hidden="true"></canvas>
+
+  <!-- เอฟเฟกต์แดงขอบจอเมื่อโดนดาเมจ -->
+  <div id="damage-flash" aria-hidden="true"></div>
+
+  <!-- ปุ่มเปิด/ปิดเสียงมุมขวาบน -->
+  <button id="btn-mute" class="mute-btn" type="button" aria-label="เปิดหรือปิดเสียง">
+    <span id="mute-icon">🔊</span>
+    <span id="mute-text">เสียง: เปิด</span>
+  </button>
+
+  <main class="app-shell">
+
+    <!-- =======================================================================
+         หน้าแรก: Title Screen
+    ======================================================================= -->
+    <section id="screen-title" class="screen active" aria-label="หน้าแรก">
+      <div class="glass-card">
+        <div class="arcade-tag">💘 ARCADE LOVE CHALLENGE</div>
+        <h1 class="logo-title">LOVE QUEST<br />ภารกิจพิชิตใจ</h1>
+        <p id="title-greeting" class="logo-subtitle">ผ่านให้ครบทั้ง 3 ด่านเพื่อรับจดหมายลับและรางวัลพิเศษ!</p>
+        <div class="difficulty-badge">🔥 ระดับความยาก: ท้าทายหน่อยนะ 😈</div>
+
+        <div class="stages-overview">
+          <div class="stage-preview-item">
+            <div class="stage-preview-icon">🌠</div>
+            <div class="stage-preview-text">
+              <h3>ด่าน 1: ฝ่าพายุเก็บหัวใจ</h3>
+              <p>บังคับยานหัวใจหลบอุกกาบาต สายฟ้า หนามพุ่งชน แล้วเก็บหัวใจให้ครบ!</p>
+            </div>
+          </div>
+          <div class="stage-preview-item">
+            <div class="stage-preview-icon">🃏</div>
+            <div class="stage-preview-text">
+              <h3>ด่าน 2: ปลดล็อกความทรงจำ</h3>
+              <p>จับคู่การ์ด 16 ใบแข่งกับเวลา ทำคอมโบต่อเนื่องรับโบนัส +2 วินาที!</p>
+            </div>
+          </div>
+          <div class="stage-preview-item">
+            <div class="stage-preview-icon">👾</div>
+            <div class="stage-preview-text">
+              <h3>ด่าน 3: ปราบบอสขี้งอน</h3>
+              <p>หลบห่ากระสุน & เลเซอร์มรณะ ยิงพลังรักปราบบอสให้สิ้นฤทธิ์!</p>
+            </div>
+          </div>
+        </div>
+
+        <button id="btn-start-quest" class="btn btn-neon-pink" type="button">
+          เริ่มภารกิจเลย! 🚀
+        </button>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         ด่าน 1: ฝ่าพายุเก็บหัวใจ (Canvas Arcade Dodge & Collect)
+    ======================================================================= -->
+    <section id="screen-stage1" class="screen arcade-screen" aria-label="ด่าน 1 ฝ่าพายุเก็บหัวใจ">
+      <div class="arcade-hud">
+        <div class="hud-row">
+          <span class="stage-pill">🌠 ด่าน 1: ฝ่าพายุเก็บหัวใจ</span>
+          <span id="s1-hp" class="hp-hearts">❤️❤️❤️</span>
+        </div>
+        <div class="hud-row" style="font-size:0.82rem; color: var(--text-muted);">
+          <span>หัวใจที่เก็บได้: <strong id="s1-score-text" style="color:#fff;">0 / 18</strong></span>
+          <span id="s1-shield-badge" style="color:var(--neon-cyan); display:none;">🛡️ เกราะพร้อม!</span>
+        </div>
+        <div class="bar-track">
+          <div id="s1-progress-fill" class="bar-fill pink"></div>
+        </div>
+      </div>
+
+      <div class="canvas-stage-wrap">
+        <canvas id="canvas-stage1" class="game-canvas"></canvas>
+      </div>
+
+      <p class="controls-hint">📱 ลากนิ้วบนจอ / 🖱️ ขยับเมาส์ / ⌨️ ปุ่มลูกศรหรือ WASD เพื่อหลบและเก็บหัวใจ</p>
+    </section>
+
+    <!-- =======================================================================
+         ด่าน 2: ปลดล็อกความทรงจำ (Timed 4x4 Memory Match)
+    ======================================================================= -->
+    <section id="screen-stage2" class="screen" aria-label="ด่าน 2 ปลดล็อกความทรงจำ">
+      <div class="arcade-hud">
+        <div class="hud-row">
+          <span class="stage-pill">🃏 ด่าน 2: ปลดล็อกความทรงจำ</span>
+          <span style="color: var(--neon-cyan);">⏱️ <strong id="s2-time-text">40.0</strong> วิ</span>
+        </div>
+        <div class="hud-row" style="font-size:0.82rem; color: var(--text-muted);">
+          <span>จับคู่แล้ว: <strong id="s2-pairs-text" style="color:#fff;">0 / 8</strong></span>
+          <span id="s2-combo-text" style="color: var(--neon-gold);">🔥 Combo: 0</span>
+        </div>
+        <div class="bar-track">
+          <div id="s2-timer-fill" class="bar-fill timer" style="width:100%;"></div>
+        </div>
+      </div>
+
+      <div id="s2-status-banner" class="memory-status-banner">👀 จำตำแหน่งให้ดี!</div>
+
+      <div class="memory-grid-wrap">
+        <div id="memory-grid" class="memory-grid"></div>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         ด่าน 3: ปราบบอสขี้งอน (Canvas Boss Bullet-Hell Shooter)
+    ======================================================================= -->
+    <section id="screen-stage3" class="screen arcade-screen" aria-label="ด่าน 3 ปราบบอสขี้งอน">
+      <div class="arcade-hud">
+        <div class="hud-row">
+          <span id="s3-boss-label" class="stage-pill" style="color:#ff7ec3;">👾 บอสขี้งอน Lv.99</span>
+          <span id="s3-hp" class="hp-hearts">❤️❤️❤️❤️</span>
+        </div>
+        <div class="hud-row" style="font-size:0.8rem; color: var(--text-muted);">
+          <span>HP บอส: <strong id="s3-boss-hp-text" style="color:#fff;">120 / 120</strong></span>
+          <span id="s3-power-badge" style="color:var(--neon-gold); display:none;">⚡ ยิงรัว x2!</span>
+        </div>
+        <div class="bar-track">
+          <div id="s3-boss-bar" class="bar-fill boss" style="width:100%;"></div>
+        </div>
+      </div>
+
+      <div class="canvas-stage-wrap">
+        <canvas id="canvas-stage3" class="game-canvas"></canvas>
+      </div>
+
+      <p class="controls-hint">💘 ยานจะยิงพลังรักอัตโนมัติ! เน้นหลบกระสุน-เลเซอร์ แล้วเก็บ ⚡ / 💖 ที่ตกลงมา</p>
+    </section>
+
+    <!-- =======================================================================
+         ด่านสุดท้าย (Finale Step 1): คำถามวัดใจ
+    ======================================================================= -->
+    <section id="screen-finale-question" class="screen" aria-label="คำถามสุดท้าย">
+      <div class="glass-card finale-question-card">
+        <div style="font-size:3rem; margin-bottom:6px;">🏆💘</div>
+        <h2 style="font-size:1.35rem; font-weight:800; color:#fff; margin-bottom:6px;">
+          ผ่านครบ 3 ด่านแล้ว เก่งมาก!
+        </h2>
+        <p id="finale-question-sub" style="font-size:1rem; color:var(--neon-pink-soft); font-weight:600;">
+          คำถามสุดท้าย... รักเค้ามั้ย? 🥺
+        </p>
+
+        <div id="dodging-arena" class="dodging-arena">
+          <button id="btn-finale-yes" class="btn btn-neon-pink" type="button">
+            รักมากกก 💖
+          </button>
+          <button id="btn-finale-no" class="btn" type="button">
+            ไม่รัก 😝
+          </button>
+        </div>
+
+        <p id="finale-dodge-hint" class="finale-hint"></p>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         ด่านสุดท้าย (Finale Step 2): ใบประกาศแรงก์ & จดหมายบอกรัก + คูปอง
+    ======================================================================= -->
+    <section id="screen-certificate" class="screen" aria-label="ใบประกาศและจดหมายบอกรัก">
+      <div class="glass-card certificate-card">
+        <div class="arcade-tag" style="margin-bottom:10px;">🎉 MISSION ACCOMPLISHED</div>
+
+        <!-- ส่วนหัวแสดงแรงก์และสถิติ -->
+        <div class="cert-header">
+          <div id="cert-rank-badge" class="rank-badge rank-S">
+            <span class="rank-label">RANK</span>
+            <span id="cert-rank-letter" class="rank-letter">S</span>
+          </div>
+          <div class="cert-stats">
+            <div id="cert-player-title" class="cert-stats-title">ผู้พิชิตใจระดับตำนาน 👑</div>
+            <div class="cert-stats-row">
+              <span class="stat-chip">⏱️ เวลา: <strong id="cert-clear-time">01:30</strong></span>
+              <span class="stat-chip">🔄 ลองใหม่: <strong id="cert-retries">0</strong> ครั้ง</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- จดหมายบอกรัก -->
+        <div class="letter-box">
+          <h3 id="cert-letter-title" class="letter-title">ถึงคนเก่งของเค้า 💌</h3>
+          <div id="cert-letter-body"></div>
+          <div id="cert-letter-sign" class="letter-sign">— เค้าเอง</div>
+        </div>
+
+        <!-- คูปองรางวัล -->
+        <div class="coupon-box">
+          <div id="cert-coupon-text" class="coupon-text"></div>
+          <div class="coupon-note">แคปหน้าจอนี้มาแลกรางวัลได้เลย 📸</div>
+        </div>
+
+        <button id="btn-replay-all" class="btn btn-neon-cyan" type="button">
+          เล่นใหม่อีกครั้งตั้งแต่ด่าน 1 🚀
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- โมดอลกลางจอสำหรับแจ้งผ่านด่าน หรือ แพ้แล้วลองใหม่ -->
+  <div id="game-modal" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div id="modal-card" class="modal-card">
+      <div id="modal-emoji" class="modal-emoji">🎉</div>
+      <h2 id="modal-title" class="modal-title">ผ่านด่านแล้ว!</h2>
+      <p id="modal-desc" class="modal-desc">พร้อมไปลุยด่านต่อไปหรือยัง?</p>
+      <button id="modal-action-btn" class="btn btn-neon-pink" type="button">ลุยด่านต่อไป! ➡️</button>
+    </div>
+  </div>
+
+  <script>
+    /* =========================================================================
+       ⭐ LOVE_CONFIG — แก้ไขชื่อแฟน ข้อความ และระดับความยากได้ง่ายๆ จากตรงนี้ ⭐
+    ========================================================================= */
+    const LOVE_CONFIG = {
+      partnerName: "ที่รัก",
+      senderName: "เค้าเอง",
+      bossName: "บอสขี้งอน Lv.99",
+      stage1Target: 18,          // จำนวนหัวใจที่ต้องเก็บในด่าน 1
+      stage2TimeLimit: 40,       // เวลาจำกัดในด่าน 2 (วินาที)
+      bossMaxHp: 120,            // เลือดของบอสในด่าน 3
+      letterTitle: "ถึงคนเก่งของเค้า 💌",
+      letterParagraphs: [
+        "เก่งมากเลย {partnerName}! ขนาดด่านยากๆ ยังฝ่าพายุ จับคู่ความทรงจำ และปราบบอสขี้งอนลงได้หมดเลย แสดงว่าตั้งใจเล่นเพื่อเค้ามากแน่ๆ ใช่มั้ยล่ะ 🥰",
+        "ขอบคุณนะที่คอยอยู่ข้างๆ เป็นความสบายใจ เป็นเสียงหัวเราะ และเป็นคนโปรดของเค้าในทุกๆ วัน ไม่ว่าจะเจอเรื่องเหนื่อยแค่ไหน แค่มีเธออยู่ด้วยทุกอย่างก็ผ่านไปได้เสมอ",
+        "ไม่ว่าอนาคตจะมีด่านที่ยากกว่านี้อีกกี่ด่าน เค้าก็อยากจับมือเธอผ่านมันไปด้วยกันนะ รักเธอมากที่สุดในโลกเลย! 💖✨"
+      ],
+      rewardCoupon: "🎟️ คูปองตามใจ 1 วันเต็ม (พาไปกินของอร่อยฟรี 1 มื้อ!)",
+      runawayTexts: [
+        "ไม่รัก 😝",
+        "กดไม่โดนหรอก 💨",
+        "ฝันไปเถอะ! 😜",
+        "หนีเก่งนะบอกเลย ⚡",
+        "กดรักเถอะน่าา 🥺",
+        "มือไวไม่พอหรอก! 😈",
+        "ยอมแพ้แล้วกดรักสิ 💖"
+      ],
+      failTeaseMessages: [
+        "อุ๊ย! แตกพ่ายซะแล้ว ลองใหม่อีกรอบนะคนเก่ง 😜",
+        "แง้ โดนสอยซะแล้ว! ฮึบๆ ลุกขึ้นมาลุยใหม่นะ 😈",
+        "เกือบไปแล้วนะ! อย่าเพิ่งยอมแพ้ รางวัลรออยู่ 💘",
+        "โหดไปหน่อยใช่มั้ยล่ะ ลองอีกรอบรับรองผ่านแน่! 🔥"
+      ]
+    };
+
+    /* =========================================================================
+       1. ตัวช่วยทั่วไป (Utilities)
+    ========================================================================= */
+    function formatMsg(str) {
+      return String(str)
+        .replace(/\{partnerName\}/g, LOVE_CONFIG.partnerName)
+        .replace(/\{senderName\}/g, LOVE_CONFIG.senderName);
+    }
+
+    function randRange(min, max) {
+      return min + Math.random() * (max - min);
+    }
+
+    function pickRandom(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function clamp(v, min, max) {
+      return Math.max(min, Math.min(max, v));
+    }
+
+    function formatDuration(ms) {
+      const totalSec = Math.max(1, Math.floor(ms / 1000));
+      const m = String(Math.floor(totalSec / 60)).padStart(2, "0");
+      const s = String(totalSec % 60).padStart(2, "0");
+      return `${m}:${s}`;
+    }
+
+    /* =========================================================================
+       2. ระบบเสียงสังเคราะห์ Web Audio API (ไม่ต้องใช้ไฟล์เสียงภายนอก)
+    ========================================================================= */
+    const SFX = {
+      ctx: null,
+      muted: false,
+
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) this.ctx = new AudioCtx();
+        }
+        if (this.ctx && this.ctx.state === "suspended") {
+          this.ctx.resume().catch(() => {});
+        }
+      },
+
+      tone(f1, f2, dur, type = "sine", vol = 0.12, delay = 0) {
+        if (this.muted) return;
+        try {
+          this.init();
+          if (!this.ctx) return;
+          const now = this.ctx.currentTime + delay;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(f1, now);
+          if (f2 !== f1) {
+            osc.frequency.exponentialRampToValueAtTime(Math.max(30, f2), now + dur);
+          }
+          gain.gain.setValueAtTime(0.001, now);
+          gain.gain.linearRampToValueAtTime(vol, now + 0.012);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + dur + 0.02);
+        } catch (e) {
+          // ข้ามข้อผิดพลาดของเบราว์เซอร์ที่บล็อกเสียง
+        }
+      },
+
+      collect() {
+        this.tone(587, 987, 0.12, "sine", 0.14);
+      },
+
+      comboDing() {
+        this.tone(784, 784, 0.1, "triangle", 0.14, 0);
+        this.tone(1046, 1318, 0.18, "sine", 0.14, 0.07);
+      },
+
+      powerup() {
+        const notes = [523, 659, 784, 1046];
+        notes.forEach((n, i) => this.tone(n, n * 1.04, 0.11, "triangle", 0.13, i * 0.055));
+      },
+
+      cardFlip() {
+        this.tone(420, 620, 0.06, "triangle", 0.09);
+      },
+
+      matchSparkle() {
+        this.tone(659, 659, 0.11, "sine", 0.13, 0);
+        this.tone(880, 880, 0.12, "sine", 0.13, 0.07);
+        this.tone(1318, 1318, 0.2, "triangle", 0.13, 0.14);
+      },
+
+      mismatch() {
+        this.tone(240, 160, 0.16, "sawtooth", 0.08);
+      },
+
+      shoot() {
+        this.tone(780, 320, 0.06, "triangle", 0.045);
+      },
+
+      bossHit() {
+        this.tone(190, 110, 0.06, "square", 0.055);
+      },
+
+      laserCharge() {
+        this.tone(220, 820, 0.55, "sawtooth", 0.07);
+      },
+
+      laserFire() {
+        this.tone(480, 95, 0.42, "sawtooth", 0.14);
+        this.tone(160, 70, 0.45, "square", 0.09);
+      },
+
+      playerDamage() {
+        this.tone(170, 55, 0.24, "sawtooth", 0.16);
+        this.tone(110, 45, 0.26, "square", 0.11, 0.04);
+      },
+
+      shieldBreak() {
+        this.tone(620, 260, 0.2, "triangle", 0.14);
+      },
+
+      bossExplode() {
+        for (let i = 0; i < 4; i++) {
+          this.tone(220 - i * 25, 45, 0.28, "sawtooth", 0.15, i * 0.14);
+        }
+      },
+
+      dodge() {
+        this.tone(320, 660, 0.12, "triangle", 0.12);
+      },
+
+      victoryFanfare() {
+        const seq = [
+          [523.25, 0.0, 0.14],
+          [659.25, 0.11, 0.14],
+          [783.99, 0.22, 0.14],
+          [1046.5, 0.34, 0.28],
+          [987.77, 0.52, 0.14],
+          [1046.5, 0.66, 0.42]
+        ];
+        seq.forEach(([f, d, dur]) => this.tone(f, f, dur, "triangle", 0.15, d));
+      }
+    };
+
+    /* =========================================================================
+       3. สถานะหลักของเกมและการจัดการหน้าจอ / ล้าง Loop
+    ========================================================================= */
+    const LOGICAL_W = 360;
+    const LOGICAL_H = 520;
+
+    const appState = {
+      currentScreen: "title",
+      totalRetries: 0,
+      startTime: 0,
+      clearTimeMs: 0,
+      activeRaf: null,
+      activeTimers: new Set(),
+      activeIntervals: new Set(),
+      fireworksRaf: null,
+      modalCallback: null
+    };
+
+    const screens = {
+      title: document.getElementById("screen-title"),
+      stage1: document.getElementById("screen-stage1"),
+      stage2: document.getElementById("screen-stage2"),
+      stage3: document.getElementById("screen-stage3"),
+      finaleQuestion: document.getElementById("screen-finale-question"),
+      certificate: document.getElementById("screen-certificate")
+    };
+
+    const ui = {
+      starfield: document.getElementById("starfield"),
+      fireworksCanvas: document.getElementById("fireworks-canvas"),
+      damageFlash: document.getElementById("damage-flash"),
+      btnMute: document.getElementById("btn-mute"),
+      muteIcon: document.getElementById("mute-icon"),
+      muteText: document.getElementById("mute-text"),
+
+      titleGreeting: document.getElementById("title-greeting"),
+      btnStartQuest: document.getElementById("btn-start-quest"),
+
+      // Stage 1 HUD
+      canvas1: document.getElementById("canvas-stage1"),
+      s1Hp: document.getElementById("s1-hp"),
+      s1ScoreText: document.getElementById("s1-score-text"),
+      s1ProgressFill: document.getElementById("s1-progress-fill"),
+      s1ShieldBadge: document.getElementById("s1-shield-badge"),
+
+      // Stage 2 HUD
+      s2TimeText: document.getElementById("s2-time-text"),
+      s2PairsText: document.getElementById("s2-pairs-text"),
+      s2ComboText: document.getElementById("s2-combo-text"),
+      s2TimerFill: document.getElementById("s2-timer-fill"),
+      s2StatusBanner: document.getElementById("s2-status-banner"),
+      memoryGrid: document.getElementById("memory-grid"),
+
+      // Stage 3 HUD
+      canvas3: document.getElementById("canvas-stage3"),
+      s3BossLabel: document.getElementById("s3-boss-label"),
+      s3Hp: document.getElementById("s3-hp"),
+      s3BossHpText: document.getElementById("s3-boss-hp-text"),
+      s3BossBar: document.getElementById("s3-boss-bar"),
+      s3PowerBadge: document.getElementById("s3-power-badge"),
+
+      // Finale
+      dodgingArena: document.getElementById("dodging-arena"),
+      btnFinaleYes: document.getElementById("btn-finale-yes"),
+      btnFinaleNo: document.getElementById("btn-finale-no"),
+      finaleDodgeHint: document.getElementById("finale-dodge-hint"),
+
+      certRankBadge: document.getElementById("cert-rank-badge"),
+      certRankLetter: document.getElementById("cert-rank-letter"),
+      certPlayerTitle: document.getElementById("cert-player-title"),
+      certClearTime: document.getElementById("cert-clear-time"),
+      certRetries: document.getElementById("cert-retries"),
+      certLetterTitle: document.getElementById("cert-letter-title"),
+      certLetterBody: document.getElementById("cert-letter-body"),
+      certLetterSign: document.getElementById("cert-letter-sign"),
+      certCouponText: document.getElementById("cert-coupon-text"),
+      btnReplayAll: document.getElementById("btn-replay-all"),
+
+      // Modal
+      modalBackdrop: document.getElementById("game-modal"),
+      modalCard: document.getElementById("modal-card"),
+      modalEmoji: document.getElementById("modal-emoji"),
+      modalTitle: document.getElementById("modal-title"),
+      modalDesc: document.getElementById("modal-desc"),
+      modalActionBtn: document.getElementById("modal-action-btn")
+    };
+
+    // ตัวช่วยสร้างและล้าง Timer/Interval/RAF อย่างปลอดภัย ไม่มีเร่งความเร็วหรือ Memory Leak
+    function safeTimeout(fn, ms) {
+      const id = setTimeout(() => {
+        appState.activeTimers.delete(id);
+        fn();
+      }, ms);
+      appState.activeTimers.add(id);
+      return id;
+    }
+
+    function safeInterval(fn, ms) {
+      const id = setInterval(fn, ms);
+      appState.activeIntervals.add(id);
+      return id;
+    }
+
+    function cleanupStageLoops() {
+      if (appState.activeRaf !== null) {
+        cancelAnimationFrame(appState.activeRaf);
+        appState.activeRaf = null;
+      }
+      appState.activeTimers.forEach((id) => clearTimeout(id));
+      appState.activeTimers.clear();
+      appState.activeIntervals.forEach((id) => clearInterval(id));
+      appState.activeIntervals.clear();
+    }
+
+    function showScreen(name) {
+      appState.currentScreen = name;
+      Object.entries(screens).forEach(([k, el]) => {
+        el.classList.toggle("active", k === name);
+      });
+    }
+
+    function triggerDamageFlash() {
+      ui.damageFlash.classList.add("active");
+      safeTimeout(() => ui.damageFlash.classList.remove("active"), 180);
+    }
+
+    function openModal({ emoji, title, desc, btnText, isDanger = false, onAction }) {
+      ui.modalEmoji.textContent = emoji;
+      ui.modalTitle.textContent = title;
+      ui.modalDesc.textContent = desc;
+      ui.modalActionBtn.textContent = btnText;
+      ui.modalCard.classList.toggle("danger", isDanger);
+      appState.modalCallback = onAction;
+      ui.modalBackdrop.classList.add("open");
+    }
+
+    function closeModal() {
+      ui.modalBackdrop.classList.remove("open");
+      appState.modalCallback = null;
+    }
+
+    ui.modalActionBtn.addEventListener("click", () => {
+      SFX.collect();
+      const cb = appState.modalCallback;
+      closeModal();
+      if (typeof cb === "function") cb();
+    });
+
+    /* =========================================================================
+       4. ตัวช่วยตั้งค่า Canvas HiDPI และการควบคุม (Touch -42px / Mouse / Keyboard)
+    ========================================================================= */
+    function setupHiDPICanvas(canvas) {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = LOGICAL_W * dpr;
+      canvas.height = LOGICAL_H * dpr;
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return ctx;
+    }
+
+    // ตัวจัดการ Input ที่ใช้ร่วมกันได้ทั้งด่าน 1 และด่าน 3
+    const InputController = {
+      keys: {},
+      pointerActive: false,
+      targetX: LOGICAL_W / 2,
+      targetY: LOGICAL_H - 72,
+      boundCanvas: null,
+
+      initKeyboard() {
+        window.addEventListener("keydown", (e) => {
+          const k = e.key.toLowerCase();
+          if (["arrowup", "arrowdown", "arrowleft", "arrowright", "w", "a", "s", "d"].includes(k)) {
+            this.keys[k] = true;
+            this.pointerActive = false;
+          }
+        });
+        window.addEventListener("keyup", (e) => {
+          this.keys[e.key.toLowerCase()] = false;
+        });
+      },
+
+      bindToCanvas(canvas, initialX, initialY) {
+        this.targetX = initialX;
+        this.targetY = initialY;
+        this.pointerActive = false;
+        this.keys = {};
+
+        if (canvas._inputBound) return;
+        canvas._inputBound = true;
+
+        const updateFromClient = (clientX, clientY, isTouch) => {
+          const rect = canvas.getBoundingClientRect();
+          if (!rect.width || !rect.height) return;
+          const scaleX = LOGICAL_W / rect.width;
+          const scaleY = LOGICAL_H / rect.height;
+          const rawX = (clientX - rect.left) * scaleX;
+          // เลื่อนตำแหน่งขึ้น 42px ตอนใช้นิ้วลาก เพื่อไม่ให้นิ้วบังตัวยาน
+          const rawY = (clientY - rect.top - (isTouch ? 42 : 0)) * scaleY;
+          this.targetX = clamp(rawX, 20, LOGICAL_W - 20);
+          this.targetY = clamp(rawY, 36, LOGICAL_H - 24);
+          this.pointerActive = true;
+        };
+
+        canvas.addEventListener("touchstart", (e) => {
+          e.preventDefault();
+          SFX.init();
+          if (e.touches.length > 0) {
+            updateFromClient(e.touches[0].clientX, e.touches[0].clientY, true);
+          }
+        }, { passive: false });
+
+        canvas.addEventListener("touchmove", (e) => {
+          e.preventDefault();
+          if (e.touches.length > 0) {
+            updateFromClient(e.touches[0].clientX, e.touches[0].clientY, true);
+          }
+        }, { passive: false });
+
+        canvas.addEventListener("mousemove", (e) => {
+          updateFromClient(e.clientX, e.clientY, false);
+        });
+
+        canvas.addEventListener("mousedown", (e) => {
+          SFX.init();
+          updateFromClient(e.clientX, e.clientY, false);
+        });
+      },
+
+      movePlayer(player, dt, minY = 44, maxY = LOGICAL_H - 26) {
+        const keySpeed = 300;
+        let dx = 0;
+        let dy = 0;
+        if (this.keys["arrowleft"] || this.keys["a"]) dx -= 1;
+        if (this.keys["arrowright"] || this.keys["d"]) dx += 1;
+        if (this.keys["arrowup"] || this.keys["w"]) dy -= 1;
+        if (this.keys["arrowdown"] || this.keys["s"]) dy += 1;
+
+        if (dx !== 0 || dy !== 0) {
+          const len = Math.hypot(dx, dy);
+          player.x += (dx / len) * keySpeed * dt;
+          player.y += (dy / len) * keySpeed * dt;
+          this.targetX = player.x;
+          this.targetY = player.y;
+        } else if (this.pointerActive) {
+          // ไล่ตามนิ้ว/เมาส์อย่างนุ่มนวลและตอบสนองไว
+          const follow = 1 - Math.exp(-22 * dt);
+          player.x += (this.targetX - player.x) * follow;
+          player.y += (this.targetY - player.y) * follow;
+        }
+
+        player.x = clamp(player.x, 22, LOGICAL_W - 22);
+        player.y = clamp(player.y, minY, maxY);
+      }
+    };
+
+    InputController.initKeyboard();
+
+    /* =========================================================================
+       5. ฟังก์ชันวาดกราฟิก Neon บน Canvas (ยานหัวใจ, พาร์ติเคิล, ข้อความลอย)
+    ========================================================================= */
+    function drawNeonHeart(ctx, x, y, size, color, glowColor) {
+      ctx.save();
+      ctx.translate(x, y);
+      if (glowColor) {
+        ctx.shadowColor = glowColor;
+        ctx.shadowBlur = 14;
+      }
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      const s = size;
+      ctx.moveTo(0, s * 0.35);
+      ctx.bezierCurveTo(-s * 0.65, -s * 0.25, -s * 1.05, s * 0.35, 0, s * 1.05);
+      ctx.bezierCurveTo(s * 1.05, s * 0.35, s * 0.65, -s * 0.25, 0, s * 0.35);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawHeartShip(ctx, player, time) {
+      // กระพริบระหว่างช่วงอมตะหลังโดนชน
+      if (player.invuln > 0 && Math.floor(player.invuln * 14) % 2 === 0) {
+        return;
+      }
+
+      ctx.save();
+      ctx.translate(player.x, player.y);
+
+      // แสงไฟไอพ่นด้านล่าง
+      const flameH = 10 + Math.sin(time * 36) * 4;
+      const gradFlame = ctx.createLinearGradient(0, 12, 0, 12 + flameH);
+      gradFlame.addColorStop(0, "#00f0ff");
+      gradFlame.addColorStop(0.6, "#ff4da6");
+      gradFlame.addColorStop(1, "rgba(255, 77, 166, 0)");
+      ctx.fillStyle = gradFlame;
+      ctx.beginPath();
+      ctx.moveTo(-6, 12);
+      ctx.lineTo(6, 12);
+      ctx.lineTo(0, 14 + flameH);
+      ctx.closePath();
+      ctx.fill();
+
+      // ปีกยานนีออนซ้ายขวา
+      ctx.fillStyle = "#5cf2ff";
+      ctx.shadowColor = "#00f0ff";
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.moveTo(-19, 8);
+      ctx.lineTo(-9, -4);
+      ctx.lineTo(-8, 12);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(19, 8);
+      ctx.lineTo(9, -4);
+      ctx.lineTo(8, 12);
+      ctx.closePath();
+      ctx.fill();
+
+      // ตัวเรือนรูปหัวใจสีชมพูนีออน
+      ctx.shadowColor = "#ff4da6";
+      ctx.shadowBlur = 16;
+      ctx.fillStyle = "#ff4da6";
+      ctx.beginPath();
+      ctx.moveTo(0, -16);
+      ctx.bezierCurveTo(14, -22, 20, -4, 0, 14);
+      ctx.bezierCurveTo(-20, -4, -14, -22, 0, -16);
+      ctx.closePath();
+      ctx.fill();
+
+      // แกนกลางสว่าง (แสดงจุด hitbox ที่แท้จริงอย่างชัดเจน)
+      ctx.shadowBlur = 6;
+      ctx.fillStyle = "#fff3fa";
+      ctx.beginPath();
+      ctx.arc(0, -2, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // โล่บาเรียถ้าเก็บเกราะได้ (ด่าน 1)
+      if (player.shield) {
+        ctx.strokeStyle = "#00f0ff";
+        ctx.lineWidth = 2.5;
+        ctx.shadowColor = "#00f0ff";
+        ctx.shadowBlur = 14;
+        ctx.beginPath();
+        ctx.arc(0, 0, 24 + Math.sin(time * 8) * 1.8, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.fillStyle = "rgba(0, 240, 255, 0.12)";
+        ctx.fill();
+      }
+
+      ctx.restore();
+    }
+
+    function createBurst(list, x, y, color, count = 12, speedMin = 40, speedMax = 160) {
+      for (let i = 0; i < count; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const spd = randRange(speedMin, speedMax);
+        list.push({
+          x,
+          y,
+          vx: Math.cos(ang) * spd,
+          vy: Math.sin(ang) * spd,
+          life: randRange(0.28, 0.6),
+          maxLife: 0.6,
+          size: randRange(2.2, 5),
+          color
+        });
+      }
+    }
+
+    function createPopup(list, x, y, text, color = "#ffd166") {
+      list.push({ x, y, text, color, life: 0.85, maxLife: 0.85 });
+    }
+
+    function updateAndDrawParticles(ctx, particles, dt) {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.life -= dt;
+        if (p.life <= 0) {
+          particles.splice(i, 1);
+          continue;
+        }
+        ctx.save();
+        ctx.globalAlpha = clamp(p.life / p.maxLife, 0, 1);
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    function updateAndDrawPopups(ctx, popups, dt) {
+      for (let i = popups.length - 1; i >= 0; i--) {
+        const pop = popups[i];
+        pop.y -= 42 * dt;
+        pop.life -= dt;
+        if (pop.life <= 0) {
+          popups.splice(i, 1);
+          continue;
+        }
+        ctx.save();
+        ctx.globalAlpha = clamp(pop.life / pop.maxLife, 0, 1);
+        ctx.font = "700 14px Prompt, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillStyle = pop.color;
+        ctx.shadowColor = "#000";
+        ctx.shadowBlur = 6;
+        ctx.fillText(pop.text, clamp(pop.x, 45, LOGICAL_W - 45), pop.y);
+        ctx.restore();
+      }
+    }
+
+    /* =========================================================================
+       6. ด่าน 1: ฝ่าพายุเก็บหัวใจ (Canvas Arcade Dodge & Collect)
+    ========================================================================= */
+    function startStage1() {
+      cleanupStageLoops();
+      stopFireworks();
+      showScreen("stage1");
+
+      const ctx = setupHiDPICanvas(ui.canvas1);
+      InputController.bindToCanvas(ui.canvas1, LOGICAL_W / 2, LOGICAL_H - 76);
+
+      const target = LOVE_CONFIG.stage1Target;
+      const state = {
+        running: true,
+        time: 0,
+        score: 0,
+        combo: 0,
+        shake: 0,
+        player: {
+          x: LOGICAL_W / 2,
+          y: LOGICAL_H - 76,
+          hp: 3,
+          maxHp: 3,
+          invuln: 0,
+          shield: false
+        },
+        hearts: [],
+        obstacles: [],
+        powerups: [],
+        particles: [],
+        popups: [],
+        bgStars: Array.from({ length: 34 }, () => ({
+          x: Math.random() * LOGICAL_W,
+          y: Math.random() * LOGICAL_H,
+          speed: randRange(30, 95),
+          size: randRange(1, 2.4)
+        })),
+        heartTimer: 0.3,
+        obstacleTimer: 0.7,
+        shieldTimer: 7.5
+      };
+
+      function syncHud() {
+        ui.s1Hp.textContent = "❤️".repeat(state.player.hp) + "🖤".repeat(state.player.maxHp - state.player.hp);
+        ui.s1ScoreText.textContent = `${state.score} / ${target}`;
+        ui.s1ProgressFill.style.width = `${Math.min(100, (state.score / target) * 100)}%`;
+        ui.s1ShieldBadge.style.display = state.player.shield ? "inline" : "none";
+      }
+
+      syncHud();
+
+      function spawnHeart() {
+        const isGold = Math.random() < 0.18;
+        state.hearts.push({
+          x: randRange(30, LOGICAL_W - 30),
+          y: -22,
+          vy: isGold ? randRange(155, 195) : randRange(115, 155),
+          vx: randRange(-18, 18),
+          isGold,
+          radius: isGold ? 15 : 14,
+          pulse: Math.random() * Math.PI * 2
+        });
+      }
+
+      function spawnObstacle() {
+        // ยิ่งเก็บได้เยอะ พายุยิ่งโหดและเร็วขึ้น
+        const diff = clamp(state.score / target, 0, 1);
+        const speedBoost = 1 + diff * 0.55;
+        const roll = Math.random();
+
+        if (roll < 0.42) {
+          // 1. อุกกาบาตไฟพุ่งเร็ว
+          state.obstacles.push({
+            kind: "meteor",
+            x: randRange(24, LOGICAL_W - 24),
+            y: -26,
+            vx: randRange(-35, 35),
+            vy: randRange(190, 255) * speedBoost,
+            radius: 14,
+            rot: 0
+          });
+        } else if (roll < 0.74) {
+          // 2. ก้อนเมฆสายฟ้าวิ่งซิกแซก
+          state.obstacles.push({
+            kind: "cloud",
+            baseX: randRange(48, LOGICAL_W - 48),
+            x: 0,
+            y: -28,
+            vy: randRange(125, 165) * speedBoost,
+            amp: randRange(34, 58),
+            freq: randRange(3.2, 4.8),
+            phase: Math.random() * Math.PI * 2,
+            age: 0,
+            radius: 15
+          });
+        } else {
+          // 3. หนามเล็งเป้ามายังตำแหน่ง X ปัจจุบันของผู้เล่น
+          const startX = randRange(26, LOGICAL_W - 26);
+          const dx = state.player.x - startX;
+          const dy = Math.max(120, state.player.y - (-24));
+          const spd = randRange(195, 240) * speedBoost;
+          const len = Math.hypot(dx, dy);
+          state.obstacles.push({
+            kind: "thorn",
+            x: startX,
+            y: -24,
+            vx: (dx / len) * spd,
+            vy: (dy / len) * spd,
+            radius: 13,
+            rot: 0
+          });
+        }
+      }
+
+      let lastTs = performance.now();
+
+      function loop(now) {
+        if (!state.running) return;
+        const dt = Math.min(0.05, (now - lastTs) / 1000);
+        lastTs = now;
+        state.time += dt;
+
+        // อัปเดตตำแหน่งผู้เล่น
+        InputController.movePlayer(state.player, dt, 44, LOGICAL_H - 26);
+        if (state.player.invuln > 0) state.player.invuln = Math.max(0, state.player.invuln - dt);
+        if (state.shake > 0) state.shake = Math.max(0, state.shake - dt * 26);
+
+        // พาร์ติเคิลไอพ่นท้ายยาน
+        if (Math.random() < 0.65) {
+          state.particles.push({
+            x: state.player.x + randRange(-4, 4),
+            y: state.player.y + 15,
+            vx: randRange(-12, 12),
+            vy: randRange(50, 95),
+            life: 0.25,
+            maxLife: 0.25,
+            size: randRange(1.8, 3.2),
+            color: Math.random() < 0.5 ? "#00f0ff" : "#ff4da6"
+          });
+        }
+
+        // ตัวจับเวลาเกิดหัวใจ / สิ่งกีดขวาง / เกราะ
+        const diff = clamp(state.score / target, 0, 1);
+        state.heartTimer -= dt;
+        if (state.heartTimer <= 0) {
+          spawnHeart();
+          state.heartTimer = randRange(0.75, 1.05);
+        }
+
+        state.obstacleTimer -= dt;
+        if (state.obstacleTimer <= 0) {
+          spawnObstacle();
+          // ความถี่สิ่งกีดขวางเพิ่มขึ้นเมื่อใกล้ผ่านด่าน
+          const minGap = 0.44 - diff * 0.16;
+          const maxGap = 0.72 - diff * 0.24;
+          state.obstacleTimer = randRange(Math.max(0.24, minGap), Math.max(0.42, maxGap));
+        }
+
+        state.shieldTimer -= dt;
+        if (state.shieldTimer <= 0) {
+          if (!state.player.shield) {
+            state.powerups.push({
+              x: randRange(34, LOGICAL_W - 34),
+              y: -24,
+              vy: 110,
+              radius: 16
+            });
+          }
+          state.shieldTimer = randRange(10, 14);
+        }
+
+        // อัปเดตหัวใจที่ตกลงมา
+        for (let i = state.hearts.length - 1; i >= 0; i--) {
+          const h = state.hearts[i];
+          h.x = clamp(h.x + h.vx * dt, 20, LOGICAL_W - 20);
+          h.y += h.vy * dt;
+          h.pulse += dt * 6;
+
+          const dist = Math.hypot(h.x - state.player.x, h.y - state.player.y);
+          if (dist < h.radius + 17) {
+            const pts = h.isGold ? 2 : 1;
+            state.score = Math.min(target, state.score + pts);
+            state.combo += 1;
+            if (h.isGold || state.combo >= 3) {
+              SFX.comboDing();
+            } else {
+              SFX.collect();
+            }
+            createBurst(state.particles, h.x, h.y, h.isGold ? "#ffd166" : "#ff5eb3", h.isGold ? 18 : 12);
+            const label = h.isGold
+              ? "GOLD +2 ✨"
+              : state.combo >= 3
+              ? `+1 🔥 x${state.combo}`
+              : "+1 💖";
+            createPopup(state.popups, h.x, h.y - 8, label, h.isGold ? "#ffd166" : "#ff99cc");
+            state.hearts.splice(i, 1);
+            syncHud();
+
+            if (state.score >= target) {
+              state.running = false;
+              SFX.victoryFanfare();
+              createBurst(state.particles, state.player.x, state.player.y, "#ffd166", 28, 60, 210);
+              safeTimeout(() => {
+                openModal({
+                  emoji: "🌠💖",
+                  title: "ผ่านด่าน 1 แล้ว!",
+                  desc: "ฝีมือหลบพายุสุดยอดมาก! เตรียมใช้ความจำพิชิตด่าน 2 กันต่อเลย!",
+                  btnText: "ลุยด่าน 2 กันเลย! ➡️",
+                  onAction: startStage2
+                });
+              }, 350);
+              return;
+            }
+            continue;
+          }
+
+          if (h.y > LOGICAL_H + 35) state.hearts.splice(i, 1);
+        }
+
+        // อัปเดตเกราะป้องกัน
+        for (let i = state.powerups.length - 1; i >= 0; i--) {
+          const p = state.powerups[i];
+          p.y += p.vy * dt;
+          if (Math.hypot(p.x - state.player.x, p.y - state.player.y) < p.radius + 16) {
+            state.player.shield = true;
+            SFX.powerup();
+            createBurst(state.particles, p.x, p.y, "#00f0ff", 16);
+            createPopup(state.popups, p.x, p.y, "SHIELD ON! 🛡️", "#00f0ff");
+            state.powerups.splice(i, 1);
+            syncHud();
+            continue;
+          }
+          if (p.y > LOGICAL_H + 30) state.powerups.splice(i, 1);
+        }
+
+        // อัปเดตสิ่งกีดขวาง + เช็กการชน
+        for (let i = state.obstacles.length - 1; i >= 0; i--) {
+          const ob = state.obstacles[i];
+          if (ob.kind === "cloud") {
+            ob.age += dt;
+            ob.y += ob.vy * dt;
+            ob.x = clamp(ob.baseX + Math.sin(ob.age * ob.freq + ob.phase) * ob.amp, 20, LOGICAL_W - 20);
+          } else {
+            ob.x += ob.vx * dt;
+            ob.y += ob.vy * dt;
+            ob.rot = (ob.rot || 0) + dt * 6;
+          }
+
+          // Hitbox ของผู้เล่นค่อนข้างยุติธรรม (รัศมี 10.5px)
+          const dist = Math.hypot(ob.x - state.player.x, ob.y - state.player.y);
+          if (dist < ob.radius + 10.5 && state.player.invuln <= 0) {
+            state.obstacles.splice(i, 1);
+            state.combo = 0;
+
+            if (state.player.shield) {
+              state.player.shield = false;
+              state.player.invuln = 1.0;
+              state.shake = 7;
+              SFX.shieldBreak();
+              createBurst(state.particles, state.player.x, state.player.y, "#00f0ff", 20);
+              createPopup(state.popups, state.player.x, state.player.y - 12, "เกราะรับไว้ให้! 🛡️", "#00f0ff");
+              syncHud();
+            } else {
+              state.player.hp -= 1;
+              state.player.invuln = 1.2;
+              state.shake = 12;
+              SFX.playerDamage();
+              triggerDamageFlash();
+              createBurst(state.particles, state.player.x, state.player.y, "#ff3b5c", 22, 60, 190);
+              createPopup(state.popups, state.player.x, state.player.y - 12, "โอ๊ย! -1 HP 💢", "#ff3b5c");
+              syncHud();
+
+              if (state.player.hp <= 0) {
+                state.running = false;
+                safeTimeout(() => {
+                  openModal({
+                    emoji: "💥😜",
+                    title: "ด่าน 1 ยังไม่ผ่านน้า!",
+                    desc: pickRandom(LOVE_CONFIG.failTeaseMessages),
+                    btnText: "ลองด่านนี้อีกครั้ง 🔄",
+                    isDanger: true,
+                    onAction: () => {
+                      appState.totalRetries += 1;
+                      startStage1();
+                    }
+                  });
+                }, 320);
+                return;
+              }
+            }
+            continue;
+          }
+
+          if (ob.y > LOGICAL_H + 40 || ob.x < -40 || ob.x > LOGICAL_W + 40) {
+            state.obstacles.splice(i, 1);
+          }
+        }
+
+        // วาดเฟรมทั้งหมด
+        ctx.save();
+        if (state.shake > 0) {
+          ctx.translate(randRange(-state.shake, state.shake), randRange(-state.shake, state.shake));
+        }
+
+        ctx.clearRect(-20, -20, LOGICAL_W + 40, LOGICAL_H + 40);
+
+        // ดาววิ่งพื้นหลัง
+        ctx.fillStyle = "rgba(255, 255, 255, 0.55)";
+        state.bgStars.forEach((s) => {
+          s.y += s.speed * dt;
+          if (s.y > LOGICAL_H) {
+            s.y = -4;
+            s.x = Math.random() * LOGICAL_W;
+          }
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // วาดหัวใจที่เก็บได้
+        state.hearts.forEach((h) => {
+          const sc = 1 + Math.sin(h.pulse) * 0.1;
+          ctx.save();
+          ctx.translate(h.x, h.y);
+          ctx.scale(sc, sc);
+          drawNeonHeart(ctx, 0, -8, h.isGold ? 15 : 13, h.isGold ? "#ffd166" : "#ff5eb3", h.isGold ? "#ffd166" : "#ff2a85");
+          if (h.isGold) {
+            ctx.fillStyle = "#fff";
+            ctx.font = "700 10px Prompt";
+            ctx.textAlign = "center";
+            ctx.fillText("+2", 0, 4);
+          }
+          ctx.restore();
+        });
+
+        // วาดเกราะ
+        state.powerups.forEach((p) => {
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.strokeStyle = "#00f0ff";
+          ctx.lineWidth = 2;
+          ctx.shadowColor = "#00f0ff";
+          ctx.shadowBlur = 12;
+          ctx.beginPath();
+          ctx.arc(0, 0, 15, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.font = "18px sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText("🛡️", 0, 1);
+          ctx.restore();
+        });
+
+        // วาดสิ่งกีดขวางทั้ง 3 แบบ
+        state.obstacles.forEach((ob) => {
+          ctx.save();
+          ctx.translate(ob.x, ob.y);
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          if (ob.kind === "meteor") {
+            ctx.shadowColor = "#ff6b35";
+            ctx.shadowBlur = 14;
+            ctx.fillStyle = "rgba(255, 107, 53, 0.25)";
+            ctx.beginPath();
+            ctx.arc(0, 0, 15, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.font = "24px sans-serif";
+            ctx.fillText("☄️", 0, 1);
+          } else if (ob.kind === "cloud") {
+            ctx.shadowColor = "#ffd166";
+            ctx.shadowBlur = 14;
+            ctx.fillStyle = "rgba(120, 90, 255, 0.28)";
+            ctx.beginPath();
+            ctx.arc(0, 0, 16, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.font = "24px sans-serif";
+            ctx.fillText("⚡", 0, 1);
+          } else {
+            ctx.rotate(ob.rot);
+            ctx.shadowColor = "#ff3b5c";
+            ctx.shadowBlur = 12;
+            ctx.fillStyle = "rgba(255, 59, 92, 0.25)";
+            ctx.beginPath();
+            ctx.arc(0, 0, 14, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.font = "22px sans-serif";
+            ctx.fillText("🌵", 0, 1);
+          }
+          ctx.restore();
+        });
+
+        // วาดตัวยาน พาร์ติเคิล และข้อความลอย
+        drawHeartShip(ctx, state.player, state.time);
+        updateAndDrawParticles(ctx, state.particles, dt);
+        updateAndDrawPopups(ctx, state.popups, dt);
+
+        ctx.restore();
+
+        appState.activeRaf = requestAnimationFrame(loop);
+      }
+
+      appState.activeRaf = requestAnimationFrame(loop);
+    }
+
+    /* =========================================================================
+       7. ด่าน 2: ปลดล็อกความทรงจำ (Timed 4x4 Memory Match Challenge)
+    ========================================================================= */
+    function showTimeBonusFloat(text) {
+      const el = document.createElement("div");
+      el.className = "time-bonus-float";
+      el.textContent = text;
+      document.body.appendChild(el);
+      safeTimeout(() => el.remove(), 1180);
+    }
+
+    function startStage2() {
+      cleanupStageLoops();
+      showScreen("stage2");
+
+      const emojis = ["💖", "🌹", "💍", "🧸", "🍓", "💌", "🌙", "🦋"];
+      const deck = [...emojis, ...emojis];
+      // สับไพ่แบบ Fisher-Yates
+      for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+      }
+
+      const maxTime = LOVE_CONFIG.stage2TimeLimit;
+      const state = {
+        timeLeft: maxTime,
+        matchedPairs: 0,
+        streak: 0,
+        flippedCards: [],
+        locked: true, // ล็อกไว้ตอนช่วงเปิดให้จำ 2.5 วินาทีแรก
+        ended: false
+      };
+
+      ui.memoryGrid.innerHTML = "";
+      ui.s2PairsText.textContent = "0 / 8";
+      ui.s2ComboText.textContent = "🔥 Combo: 0";
+      ui.s2TimeText.textContent = maxTime.toFixed(1);
+      ui.s2TimerFill.style.width = "100%";
+      ui.s2TimerFill.classList.remove("low");
+      ui.s2StatusBanner.textContent = "👀 จำตำแหน่งให้ดี! (กำลังเปิดให้ดู 2.5 วิ)";
+
+      const cardEls = deck.map((emoji, idx) => {
+        const card = document.createElement("div");
+        card.className = "mem-card flipped"; // เปิดหน้าให้จำตอนเริ่ม
+        card.dataset.emoji = emoji;
+        card.dataset.index = String(idx);
+        card.innerHTML = `
+          <div class="mem-card-inner">
+            <div class="mem-face mem-front"></div>
+            <div class="mem-face mem-back">${emoji}</div>
+          </div>
+        `;
+        card.addEventListener("click", () => handleCardClick(card));
+        ui.memoryGrid.appendChild(card);
+        return card;
+      });
+
+      function updateTimerUI() {
+        ui.s2TimeText.textContent = Math.max(0, state.timeLeft).toFixed(1);
+        const pct = clamp((state.timeLeft / maxTime) * 100, 0, 100);
+        ui.s2TimerFill.style.width = `${pct}%`;
+        ui.s2TimerFill.classList.toggle("low", state.timeLeft <= 10);
+      }
+
+      // ครบ 2.5 วินาที คว่ำการ์ดทั้งหมดแล้วเริ่มนับถอยหลัง
+      safeTimeout(() => {
+        if (state.ended) return;
+        cardEls.forEach((c) => c.classList.remove("flipped"));
+        SFX.cardFlip();
+        state.locked = false;
+        ui.s2StatusBanner.textContent = "⚡ ลุยเลย! จับคู่ต่อเนื่องรับโบนัสเวลา +2 วินาที!";
+
+        let prevTime = performance.now();
+        safeInterval(() => {
+          if (state.ended) return;
+          const now = performance.now();
+          const dt = (now - prevTime) / 1000;
+          prevTime = now;
+          state.timeLeft -= dt;
+          updateTimerUI();
+
+          if (state.timeLeft <= 0) {
+            state.ended = true;
+            state.locked = true;
+            cleanupStageLoops();
+            SFX.playerDamage();
+            openModal({
+              emoji: "⏰😜",
+              title: "หมดเวลาแล้ว!",
+              desc: "จำเกือบครบแล้วเชียว! ทำคอมโบจับคู่ต่อเนื่องจะได้ +2 วินาทีด้วยนะ ลองอีกรอบ!",
+              btnText: "ลองด่านนี้อีกครั้ง 🔄",
+              isDanger: true,
+              onAction: () => {
+                appState.totalRetries += 1;
+                startStage2();
+              }
+            });
+          }
+        }, 100);
+      }, 2500);
+
+      function handleCardClick(card) {
+        if (state.locked || state.ended) return;
+        if (card.classList.contains("flipped") || card.classList.contains("matched")) return;
+
+        SFX.cardFlip();
+        card.classList.add("flipped");
+        state.flippedCards.push(card);
+
+        if (state.flippedCards.length < 2) return;
+
+        const [first, second] = state.flippedCards;
+        state.flippedCards = [];
+
+        if (first.dataset.emoji === second.dataset.emoji) {
+          // จับคู่สำเร็จ!
+          first.classList.add("matched");
+          second.classList.add("matched");
+          state.matchedPairs += 1;
+          state.streak += 1;
+          ui.s2PairsText.textContent = `${state.matchedPairs} / 8`;
+          ui.s2ComboText.textContent = `🔥 Combo: ${state.streak}`;
+
+          if (state.streak >= 2) {
+            state.timeLeft = Math.min(maxTime + 10, state.timeLeft + 2);
+            updateTimerUI();
+            SFX.comboDing();
+            showTimeBonusFloat(`+2 วินาที! 🔥 Combo x${state.streak}`);
+            ui.s2StatusBanner.textContent = `🔥 คอมโบ x${state.streak}! ได้โบนัสเวลาเพิ่ม +2 วิ!`;
+          } else {
+            SFX.matchSparkle();
+            ui.s2StatusBanner.textContent = "✨ เยี่ยมมาก! หาคู่ต่อไปเลย!";
+          }
+
+          if (state.matchedPairs === 8) {
+            state.ended = true;
+            cleanupStageLoops();
+            SFX.victoryFanfare();
+            safeTimeout(() => {
+              openModal({
+                emoji: "🧠💖",
+                title: "ปลดล็อกความทรงจำครบแล้ว!",
+                desc: `ความจำดีสุดๆ เหลือเวลาตั้ง ${Math.max(0, state.timeLeft).toFixed(1)} วินาที! เตรียมรับมือด่านสุดท้ายกับ ${LOVE_CONFIG.bossName} เลย!`,
+                btnText: "บุกห้องบอส! 👾➡️",
+                onAction: startStage3
+              });
+            }, 380);
+          }
+        } else {
+          // จับคู่พลาด -> ล็อกอินพุตสั้นๆ สั่น แล้วพลิกกลับหลัง 650ms
+          state.locked = true;
+          state.streak = 0;
+          ui.s2ComboText.textContent = "🔥 Combo: 0";
+          ui.s2StatusBanner.textContent = "อุ๊ย ไม่ตรงกัน! ลองใหม่อีกทีนะ 😅";
+          SFX.mismatch();
+          first.classList.add("mismatch");
+          second.classList.add("mismatch");
+
+          safeTimeout(() => {
+            first.classList.remove("flipped", "mismatch");
+            second.classList.remove("flipped", "mismatch");
+            state.locked = false;
+          }, 650);
+        }
+      }
+    }
+
+    /* =========================================================================
+       8. ด่าน 3: ปราบบอสขี้งอน (Canvas Boss Bullet-Hell Shooter)
+    ========================================================================= */
+    function startStage3() {
+      cleanupStageLoops();
+      showScreen("stage3");
+
+      const ctx = setupHiDPICanvas(ui.canvas3);
+      InputController.bindToCanvas(ui.canvas3, LOGICAL_W / 2, LOGICAL_H - 70);
+
+      const bossMaxHp = LOVE_CONFIG.bossMaxHp;
+      ui.s3BossLabel.textContent = `👾 ${LOVE_CONFIG.bossName}`;
+
+      const state = {
+        running: true,
+        victoryPending: false,
+        time: 0,
+        shake: 0,
+        player: {
+          x: LOGICAL_W / 2,
+          y: LOGICAL_H - 70,
+          hp: 4,
+          maxHp: 4,
+          invuln: 0,
+          fireCooldown: 0,
+          rapidTimer: 0
+        },
+        boss: {
+          x: LOGICAL_W / 2,
+          y: 86,
+          hp: bossMaxHp,
+          maxHp: bossMaxHp,
+          hitFlash: 0,
+          phase2: false,
+          patternIdx: 0,
+          attackCooldown: 1.2,
+          burstQueue: 0,
+          burstTimer: 0,
+          rainRowsLeft: 0,
+          rainTimer: 0,
+          rainOffset: 0
+        },
+        // เลเซอร์เตือนล่วงหน้า (Phase 2)
+        laser: {
+          state: "idle", // idle | warning | firing
+          x: LOGICAL_W / 2,
+          width: 44,
+          timer: 0
+        },
+        playerBullets: [],
+        bossBullets: [],
+        drops: [],
+        particles: [],
+        popups: [],
+        dropTimer: 7.5,
+        bgStars: Array.from({ length: 34 }, () => ({
+          x: Math.random() * LOGICAL_W,
+          y: Math.random() * LOGICAL_H,
+          speed: randRange(35, 110),
+          size: randRange(1, 2.3)
+        }))
+      };
+
+      function syncHud() {
+        ui.s3Hp.textContent = "❤️".repeat(state.player.hp) + "🖤".repeat(state.player.maxHp - state.player.hp);
+        const hpInt = Math.max(0, Math.ceil(state.boss.hp));
+        ui.s3BossHpText.textContent = `${hpInt} / ${bossMaxHp}`;
+        ui.s3BossBar.style.width = `${(hpInt / bossMaxHp) * 100}%`;
+        if (state.player.rapidTimer > 0) {
+          ui.s3PowerBadge.style.display = "inline";
+          ui.s3PowerBadge.textContent = `⚡ ยิงรัว x2 (${state.player.rapidTimer.toFixed(1)}วิ)`;
+        } else {
+          ui.s3PowerBadge.style.display = "none";
+        }
+      }
+
+      syncHud();
+
+      function fireSpreadFan() {
+        const count = state.boss.phase2 ? 7 : 5;
+        const spread = state.boss.phase2 ? 1.25 : 0.95;
+        const speed = state.boss.phase2 ? 195 : 165;
+        for (let i = 0; i < count; i++) {
+          const ratio = count === 1 ? 0 : i / (count - 1) - 0.5;
+          const angle = Math.PI / 2 + ratio * spread;
+          state.bossBullets.push({
+            x: state.boss.x,
+            y: state.boss.y + 28,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            radius: 7,
+            color: "#c77dff"
+          });
+        }
+      }
+
+      function fireAimedOrb() {
+        const dx = state.player.x - state.boss.x;
+        const dy = state.player.y - (state.boss.y + 24);
+        const len = Math.hypot(dx, dy) || 1;
+        const spd = state.boss.phase2 ? 235 : 200;
+        state.bossBullets.push({
+          x: state.boss.x,
+          y: state.boss.y + 24,
+          vx: (dx / len) * spd,
+          vy: (dy / len) * spd,
+          radius: 7.5,
+          color: "#ff4da6"
+        });
+      }
+
+      function fireSweepingRainRow() {
+        const cols = 6;
+        const gapCol = Math.floor(Math.random() * cols);
+        const spacing = LOGICAL_W / cols;
+        const speed = state.boss.phase2 ? 175 : 150;
+        for (let c = 0; c < cols; c++) {
+          if (c === gapCol) continue; // เว้นช่องให้ผู้เล่นหลบผ่านได้
+          const bx = c * spacing + spacing * 0.5 + (state.boss.rainOffset ? 10 : -10);
+          state.bossBullets.push({
+            x: clamp(bx, 18, LOGICAL_W - 18),
+            y: state.boss.y + 24,
+            vx: 0,
+            vy: speed,
+            radius: 7,
+            color: "#00f0ff"
+          });
+        }
+        state.boss.rainOffset = state.boss.rainOffset ? 0 : 1;
+      }
+
+      function startTelegraphLaser() {
+        state.laser.state = "warning";
+        state.laser.x = clamp(state.player.x, 32, LOGICAL_W - 32);
+        state.laser.width = 46;
+        state.laser.timer = 1.1; // เตือน 1.1 วินาทีก่อนยิง
+        SFX.laserCharge();
+        createPopup(state.popups, state.laser.x, 145, "⚠️ ระวังเลเซอร์!", "#ff3b5c");
+      }
+
+      function triggerNextBossPattern() {
+        const patterns = state.boss.phase2
+          ? ["spread", "laser", "aimed", "rain", "laser", "spread"]
+          : ["spread", "aimed", "rain"];
+        const chosen = patterns[state.boss.patternIdx % patterns.length];
+        state.boss.patternIdx += 1;
+
+        if (chosen === "spread") {
+          fireSpreadFan();
+          state.boss.attackCooldown = state.boss.phase2 ? 1.25 : 1.55;
+        } else if (chosen === "aimed") {
+          state.boss.burstQueue = 3;
+          state.boss.burstTimer = 0;
+          state.boss.attackCooldown = state.boss.phase2 ? 1.45 : 1.8;
+        } else if (chosen === "rain") {
+          state.boss.rainRowsLeft = state.boss.phase2 ? 3 : 2;
+          state.boss.rainTimer = 0;
+          state.boss.attackCooldown = state.boss.phase2 ? 1.7 : 2.05;
+        } else if (chosen === "laser") {
+          startTelegraphLaser();
+          state.boss.attackCooldown = 2.05;
+        }
+      }
+
+      function damagePlayer() {
+        if (state.player.invuln > 0 || state.victoryPending) return;
+        state.player.hp -= 1;
+        state.player.invuln = 1.2;
+        state.shake = 12;
+        SFX.playerDamage();
+        triggerDamageFlash();
+        createBurst(state.particles, state.player.x, state.player.y, "#ff3b5c", 20, 60, 190);
+        createPopup(state.popups, state.player.x, state.player.y - 12, "โอ๊ย! -1 HP 💢", "#ff3b5c");
+        syncHud();
+
+        if (state.player.hp <= 0) {
+          state.running = false;
+          safeTimeout(() => {
+            openModal({
+              emoji: "👾😜",
+              title: "โดนบอสขี้งอนสอยซะแล้ว!",
+              desc: pickRandom(LOVE_CONFIG.failTeaseMessages),
+              btnText: "แก้มือด่านบอสอีกครั้ง 🔄",
+              isDanger: true,
+              onAction: () => {
+                appState.totalRetries += 1;
+                startStage3();
+              }
+            });
+          }, 340);
+        }
+      }
+
+      function drawBoss(ctx) {
+        const b = state.boss;
+        ctx.save();
+        ctx.translate(b.x, b.y);
+
+        const bodyColor = b.hitFlash > 0 ? "#ffffff" : b.phase2 ? "#ff2a5f" : "#9d4edd";
+        const glowColor = b.phase2 ? "#ff2a5f" : "#c77dff";
+
+        // ออร่าด้านหลังบอส
+        ctx.shadowColor = glowColor;
+        ctx.shadowBlur = b.phase2 ? 26 : 18;
+        ctx.fillStyle = bodyColor;
+
+        // ตัวบอสทรงกลมมีเขาน่ารักๆ
+        ctx.beginPath();
+        ctx.arc(0, 0, 34, 0, Math.PI * 2);
+        ctx.fill();
+
+        // เขาปีศาจน้อยซ้ายขวา
+        ctx.beginPath();
+        ctx.moveTo(-26, -18);
+        ctx.lineTo(-36, -38);
+        ctx.lineTo(-10, -28);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(26, -18);
+        ctx.lineTo(36, -38);
+        ctx.lineTo(10, -28);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.shadowBlur = 0;
+
+        // แก้มป่องแดงเมื่อเข้า Phase 2
+        ctx.fillStyle = b.phase2 ? "rgba(255, 220, 120, 0.75)" : "rgba(255, 133, 193, 0.55)";
+        ctx.beginPath();
+        ctx.arc(-18, 6, 6, 0, Math.PI * 2);
+        ctx.arc(18, 6, 6, 0, Math.PI * 2);
+        ctx.fill();
+
+        // ดวงตา
+        ctx.fillStyle = "#16072b";
+        ctx.beginPath();
+        ctx.arc(-12, -2, 4.5, 0, Math.PI * 2);
+        ctx.arc(12, -2, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // แววตา
+        ctx.fillStyle = "#fff";
+        ctx.beginPath();
+        ctx.arc(-13.5, -3.5, 1.6, 0, Math.PI * 2);
+        ctx.arc(10.5, -3.5, 1.6, 0, Math.PI * 2);
+        ctx.fill();
+
+        // คิ้วขมวดงอนๆ (ยิ่งงอนหนักใน Phase 2)
+        ctx.strokeStyle = "#16072b";
+        ctx.lineWidth = 3.2;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(-20, b.phase2 ? -13 : -10);
+        ctx.lineTo(-6, -6);
+        ctx.moveTo(20, b.phase2 ? -13 : -10);
+        ctx.lineTo(6, -6);
+        ctx.stroke();
+
+        // ปากบึ้ง / ปากอ้าโกรธ
+        ctx.beginPath();
+        if (b.phase2) {
+          ctx.fillStyle = "#16072b";
+          ctx.arc(0, 13, 6.5, Math.PI, 0);
+          ctx.fill();
+        } else {
+          ctx.arc(0, 15, 7, Math.PI * 1.15, Math.PI * 1.85);
+          ctx.stroke();
+        }
+
+        // สัญลักษณ์โกรธ 💢 ใน Phase 2
+        if (b.phase2) {
+          ctx.font = "16px sans-serif";
+          ctx.fillText("💢", 22, -22 + Math.sin(state.time * 12) * 2);
+        }
+
+        ctx.restore();
+      }
+
+      let lastTs = performance.now();
+
+      function loop(now) {
+        if (!state.running) return;
+        const dt = Math.min(0.05, (now - lastTs) / 1000);
+        lastTs = now;
+        state.time += dt;
+
+        // อัปเดตตำแหน่งผู้เล่น (จำกัดให้อยู่โซนกลางถึงล่างไม่ชนตัวบอสโดยตรง)
+        InputController.movePlayer(state.player, dt, 155, LOGICAL_H - 24);
+        if (state.player.invuln > 0) state.player.invuln = Math.max(0, state.player.invuln - dt);
+        if (state.shake > 0) state.shake = Math.max(0, state.shake - dt * 26);
+
+        if (state.player.rapidTimer > 0) {
+          state.player.rapidTimer = Math.max(0, state.player.rapidTimer - dt);
+          syncHud();
+        }
+
+        // ยิงพลังรักอัตโนมัติขึ้นไปหาบอส
+        if (!state.victoryPending) {
+          state.player.fireCooldown -= dt;
+          if (state.player.fireCooldown <= 0) {
+            const isRapid = state.player.rapidTimer > 0;
+            state.player.fireCooldown = isRapid ? 0.12 : 0.23;
+            SFX.shoot();
+            if (isRapid) {
+              state.playerBullets.push(
+                { x: state.player.x - 10, y: state.player.y - 16, vy: -460, dmg: 1.5, color: "#ffd166" },
+                { x: state.player.x + 10, y: state.player.y - 16, vy: -460, dmg: 1.5, color: "#ffd166" }
+              );
+            } else {
+              state.playerBullets.push({
+                x: state.player.x,
+                y: state.player.y - 18,
+                vy: -430,
+                dmg: 2,
+                color: "#ff5eb3"
+              });
+            }
+          }
+        }
+
+        // การเคลื่อนที่และการโจมตีของบอส
+        if (!state.victoryPending) {
+          const b = state.boss;
+          if (b.hitFlash > 0) b.hitFlash = Math.max(0, b.hitFlash - dt);
+
+          const moveSpeed = b.phase2 ? 1.55 : 1.0;
+          b.x = LOGICAL_W / 2 + Math.sin(state.time * moveSpeed) * 112;
+          b.y = 82 + Math.cos(state.time * moveSpeed * 1.4) * 14;
+
+          // เช็กเข้า Phase 2 (เลือด <= 50%)
+          if (!b.phase2 && b.hp <= b.maxHp * 0.5) {
+            b.phase2 = true;
+            state.shake = 10;
+            SFX.laserCharge();
+            createBurst(state.particles, b.x, b.y, "#ff2a5f", 26, 60, 200);
+            createPopup(state.popups, LOGICAL_W / 2, 145, "💢 PHASE 2: งอนขั้นสุด!", "#ff3b5c");
+          }
+
+          // คิวการยิง Aimed Burst
+          if (b.burstQueue > 0) {
+            b.burstTimer -= dt;
+            if (b.burstTimer <= 0) {
+              fireAimedOrb();
+              b.burstQueue -= 1;
+              b.burstTimer = 0.22;
+            }
+          }
+
+          // คิวการยิง Sweeping Rain
+          if (b.rainRowsLeft > 0) {
+            b.rainTimer -= dt;
+            if (b.rainTimer <= 0) {
+              fireSweepingRainRow();
+              b.rainRowsLeft -= 1;
+              b.rainTimer = 0.52;
+            }
+          }
+
+          // เลเซอร์ Phase 2
+          if (state.laser.state === "warning") {
+            state.laser.timer -= dt;
+            if (state.laser.timer <= 0) {
+              state.laser.state = "firing";
+              state.laser.timer = 0.6;
+              state.shake = 8;
+              SFX.laserFire();
+            }
+          } else if (state.laser.state === "firing") {
+            state.laser.timer -= dt;
+            // เช็กชนลำแสงเลเซอร์
+            if (Math.abs(state.player.x - state.laser.x) < state.laser.width * 0.45 + 8) {
+              damagePlayer();
+            }
+            if (state.laser.timer <= 0) {
+              state.laser.state = "idle";
+            }
+          }
+
+          // นับถอยหลังท่าโจมตีถัดไป
+          b.attackCooldown -= dt;
+          if (b.attackCooldown <= 0 && state.laser.state === "idle") {
+            triggerNextBossPattern();
+          }
+
+          // ดรอปของช่วยเหลือทุก 8-10 วินาที
+          state.dropTimer -= dt;
+          if (state.dropTimer <= 0) {
+            const needHeal = state.player.hp < state.player.maxHp;
+            const kind = needHeal && Math.random() < 0.5 ? "heal" : "rapid";
+            state.drops.push({
+              x: randRange(36, LOGICAL_W - 36),
+              y: -20,
+              vy: 115,
+              kind,
+              radius: 16
+            });
+            state.dropTimer = randRange(8, 10);
+          }
+        }
+
+        // อัปเดตกระสุนของผู้เล่นชนบอส
+        for (let i = state.playerBullets.length - 1; i >= 0; i--) {
+          const pb = state.playerBullets[i];
+          pb.y += pb.vy * dt;
+
+          if (!state.victoryPending && Math.hypot(pb.x - state.boss.x, pb.y - state.boss.y) < 36) {
+            state.boss.hp = Math.max(0, state.boss.hp - pb.dmg);
+            state.boss.hitFlash = 0.08;
+            SFX.bossHit();
+            createBurst(state.particles, pb.x, pb.y, pb.color, 4, 30, 95);
+            state.playerBullets.splice(i, 1);
+            syncHud();
+
+            if (state.boss.hp <= 0 && !state.victoryPending) {
+              state.victoryPending = true;
+              state.bossBullets = [];
+              state.laser.state = "idle";
+              state.shake = 16;
+              SFX.bossExplode();
+
+              // ระเบิดบอสหลายระลอกอย่างอลังการ
+              const bx = state.boss.x;
+              const by = state.boss.y;
+              createBurst(state.particles, bx, by, "#ff4da6", 36, 70, 240);
+              createBurst(state.particles, bx, by, "#ffd166", 28, 50, 210);
+              safeTimeout(() => {
+                createBurst(state.particles, bx + randRange(-25, 25), by + randRange(-20, 20), "#00f0ff", 30, 60, 220);
+                state.shake = 12;
+              }, 260);
+              safeTimeout(() => {
+                createBurst(state.particles, bx + randRange(-20, 20), by + randRange(-15, 15), "#ffffff", 34, 80, 260);
+                SFX.victoryFanfare();
+              }, 560);
+
+              safeTimeout(() => {
+                state.running = false;
+                appState.clearTimeMs = Date.now() - appState.startTime;
+                startFinaleQuestion();
+              }, 1450);
+            }
+            continue;
+          }
+
+          if (pb.y < -20) state.playerBullets.splice(i, 1);
+        }
+
+        // อัปเดตกระสุนของบอส
+        for (let i = state.bossBullets.length - 1; i >= 0; i--) {
+          const bb = state.bossBullets[i];
+          bb.x += bb.vx * dt;
+          bb.y += bb.vy * dt;
+
+          if (Math.hypot(bb.x - state.player.x, bb.y - state.player.y) < bb.radius + 9) {
+            state.bossBullets.splice(i, 1);
+            damagePlayer();
+            continue;
+          }
+
+          if (bb.y > LOGICAL_H + 25 || bb.x < -25 || bb.x > LOGICAL_W + 25) {
+            state.bossBullets.splice(i, 1);
+          }
+        }
+
+        // อัปเดตไอเทมดรอป (Rapid Fire / Heal)
+        for (let i = state.drops.length - 1; i >= 0; i--) {
+          const d = state.drops[i];
+          d.y += d.vy * dt;
+          if (Math.hypot(d.x - state.player.x, d.y - state.player.y) < d.radius + 16) {
+            SFX.powerup();
+            if (d.kind === "heal" && state.player.hp < state.player.maxHp) {
+              state.player.hp += 1;
+              createBurst(state.particles, d.x, d.y, "#2ee59d", 16);
+              createPopup(state.popups, d.x, d.y, "HEAL +1 ❤️", "#2ee59d");
+            } else {
+              state.player.rapidTimer = 5.0;
+              createBurst(state.particles, d.x, d.y, "#ffd166", 16);
+              createPopup(state.popups, d.x, d.y, "ยิงรัว x2! ⚡", "#ffd166");
+            }
+            state.drops.splice(i, 1);
+            syncHud();
+            continue;
+          }
+          if (d.y > LOGICAL_H + 25) state.drops.splice(i, 1);
+        }
+
+        // วาดเฟรมด่าน 3
+        ctx.save();
+        if (state.shake > 0) {
+          ctx.translate(randRange(-state.shake, state.shake), randRange(-state.shake, state.shake));
+        }
+
+        ctx.clearRect(-20, -20, LOGICAL_W + 40, LOGICAL_H + 40);
+
+        // พื้นหลังดาววิ่ง
+        ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+        state.bgStars.forEach((s) => {
+          s.y += s.speed * dt;
+          if (s.y > LOGICAL_H) {
+            s.y = -4;
+            s.x = Math.random() * LOGICAL_W;
+          }
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // วาดโซนเตือนเลเซอร์ หรือ ลำแสงเลเซอร์
+        if (state.laser.state === "warning") {
+          const pulse = 0.22 + Math.abs(Math.sin(state.time * 18)) * 0.28;
+          ctx.fillStyle = `rgba(255, 43, 86, ${pulse})`;
+          ctx.fillRect(state.laser.x - state.laser.width / 2, 0, state.laser.width, LOGICAL_H);
+          ctx.strokeStyle = "#ff3b5c";
+          ctx.setLineDash([8, 6]);
+          ctx.lineWidth = 2;
+          ctx.strokeRect(state.laser.x - state.laser.width / 2, 0, state.laser.width, LOGICAL_H);
+          ctx.setLineDash([]);
+        } else if (state.laser.state === "firing") {
+          const lx = state.laser.x;
+          const lw = state.laser.width;
+          ctx.save();
+          ctx.shadowColor = "#ff2a5f";
+          ctx.shadowBlur = 24;
+          ctx.fillStyle = "rgba(255, 42, 95, 0.85)";
+          ctx.fillRect(lx - lw / 2, 0, lw, LOGICAL_H);
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(lx - lw * 0.22, 0, lw * 0.44, LOGICAL_H);
+          ctx.restore();
+        }
+
+        // วาดไอเทมช่วยเหลือ
+        state.drops.forEach((d) => {
+          ctx.save();
+          ctx.translate(d.x, d.y);
+          const glow = d.kind === "heal" ? "#2ee59d" : "#ffd166";
+          ctx.strokeStyle = glow;
+          ctx.lineWidth = 2;
+          ctx.shadowColor = glow;
+          ctx.shadowBlur = 12;
+          ctx.beginPath();
+          ctx.arc(0, 0, 15, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.font = "17px sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(d.kind === "heal" ? "💖" : "⚡", 0, 1);
+          ctx.restore();
+        });
+
+        // วาดกระสุนพลังรักของผู้เล่น
+        state.playerBullets.forEach((pb) => {
+          ctx.save();
+          ctx.shadowColor = pb.color;
+          ctx.shadowBlur = 10;
+          ctx.fillStyle = pb.color;
+          ctx.beginPath();
+          ctx.ellipse(pb.x, pb.y, 4, 9, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#ffffff";
+          ctx.beginPath();
+          ctx.arc(pb.x, pb.y - 2, 2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        });
+
+        // วาดกระสุนพลังมืดของบอส
+        state.bossBullets.forEach((bb) => {
+          ctx.save();
+          ctx.shadowColor = bb.color;
+          ctx.shadowBlur = 12;
+          ctx.fillStyle = bb.color;
+          ctx.beginPath();
+          ctx.arc(bb.x, bb.y, bb.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#ffffff";
+          ctx.beginPath();
+          ctx.arc(bb.x, bb.y, bb.radius * 0.42, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        });
+
+        // วาดบอส (ซ่อนเมื่อระเบิดแล้ว)
+        if (!state.victoryPending) {
+          drawBoss(ctx);
+        }
+
+        // วาดยานผู้เล่น พาร์ติเคิล และข้อความลอย
+        drawHeartShip(ctx, state.player, state.time);
+        updateAndDrawParticles(ctx, state.particles, dt);
+        updateAndDrawPopups(ctx, state.popups, dt);
+
+        ctx.restore();
+
+        appState.activeRaf = requestAnimationFrame(loop);
+      }
+
+      appState.activeRaf = requestAnimationFrame(loop);
+    }
+
+    /* =========================================================================
+       9. Finale: คำถามสุดท้าย + ใบประกาศแรงก์ & จดหมายบอกรัก + พลุฉลอง
+    ========================================================================= */
+    let finaleDodgeCount = 0;
+
+    function resetFinaleButtons() {
+      finaleDodgeCount = 0;
+      ui.btnFinaleNo.classList.remove("dodging");
+      ui.btnFinaleNo.style.left = "";
+      ui.btnFinaleNo.style.top = "";
+      ui.btnFinaleNo.style.transform = "scale(1)";
+      ui.btnFinaleNo.textContent = LOVE_CONFIG.runawayTexts[0] || "ไม่รัก 😝";
+      ui.btnFinaleYes.style.transform = "scale(1)";
+      ui.finaleDodgeHint.textContent = "";
+    }
+
+    function startFinaleQuestion() {
+      cleanupStageLoops();
+      resetFinaleButtons();
+      showScreen("finaleQuestion");
+      startFireworks();
+    }
+
+    function dodgeFinaleNo(e) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      if (appState.currentScreen !== "finaleQuestion") return;
+
+      finaleDodgeCount += 1;
+      SFX.dodge();
+
+      // เปลี่ยนข้อความกวนๆ ตาม LOVE_CONFIG.runawayTexts
+      const idx = finaleDodgeCount % LOVE_CONFIG.runawayTexts.length;
+      ui.btnFinaleNo.textContent = LOVE_CONFIG.runawayTexts[idx];
+
+      // ปุ่ม "ไม่รัก" หดเล็กลงเรื่อยๆ ส่วนปุ่ม "รักมากกก" ใหญ่ขึ้น!
+      const noScale = Math.max(0.72, 1 - finaleDodgeCount * 0.05);
+      const yesScale = Math.min(1.42, 1 + finaleDodgeCount * 0.08);
+      ui.btnFinaleNo.style.transform = `scale(${noScale})`;
+      ui.btnFinaleYes.style.transform = `scale(${yesScale})`;
+
+      const hints = [
+        "เอ๊ะ! ผ่านตั้ง 3 ด่านจะมากดไม่รักได้ไง 🥺",
+        "ปุ่มไม่รักมันเริ่มหดหนีแล้วนะ~ 😜",
+        "กด 'รักมากกก 💖' เถอะ คูปองรางวัลรออยู่นะ!"
+      ];
+      ui.finaleDodgeHint.textContent = hints[Math.min(finaleDodgeCount - 1, hints.length - 1)];
+
+      ui.btnFinaleNo.classList.add("dodging");
+
+      const arenaW = ui.dodgingArena.clientWidth;
+      const arenaH = ui.dodgingArena.clientHeight;
+      const btnW = ui.btnFinaleNo.offsetWidth || 110;
+      const btnH = ui.btnFinaleNo.offsetHeight || 42;
+      const pad = 10;
+
+      const maxX = Math.max(pad, arenaW - btnW - pad);
+      const maxY = Math.max(pad, arenaH - btnH - pad);
+
+      // สุ่มตำแหน่งในกรอบ dodging-arena โดยพยายามไม่ให้ทับตรงกลางที่ปุ่มรักอยู่
+      let rx = pad;
+      let ry = pad;
+      for (let attempt = 0; attempt < 15; attempt++) {
+        rx = randRange(pad, maxX);
+        ry = randRange(pad, maxY);
+        const nearCenterX = Math.abs(rx + btnW / 2 - arenaW / 2) < 75;
+        const nearCenterY = Math.abs(ry + btnH / 2 - arenaH / 2) < 34;
+        if (!(nearCenterX && nearCenterY)) break;
+      }
+
+      ui.btnFinaleNo.style.left = `${Math.round(rx)}px`;
+      ui.btnFinaleNo.style.top = `${Math.round(ry)}px`;
+    }
+
+    ui.btnFinaleNo.addEventListener("pointerenter", (e) => {
+      if (e.pointerType === "mouse") dodgeFinaleNo(e);
+    });
+    ui.btnFinaleNo.addEventListener("touchstart", (e) => dodgeFinaleNo(e), { passive: false });
+    ui.btnFinaleNo.addEventListener("click", (e) => dodgeFinaleNo(e));
+
+    ui.btnFinaleYes.addEventListener("click", () => {
+      SFX.victoryFanfare();
+      showVictoryCertificate();
+    });
+
+    function showVictoryCertificate() {
+      const retries = appState.totalRetries;
+      let rank = "B";
+      let titleText = `ผู้พิชิตใจสุดอึดของ${LOVE_CONFIG.senderName} 💪💖`;
+      if (retries <= 1) {
+        rank = "S";
+        titleText = `เทพเจ้าแห่งความรักระดับตำนาน 👑`;
+      } else if (retries <= 3) {
+        rank = "A";
+        titleText = `ยอดฝีมือพิชิตใจระดับโปร ✨`;
+      }
+
+      ui.certRankBadge.className = `rank-badge rank-${rank}`;
+      ui.certRankLetter.textContent = rank;
+      ui.certPlayerTitle.textContent = titleText;
+      ui.certClearTime.textContent = formatDuration(appState.clearTimeMs);
+      ui.certRetries.textContent = String(retries);
+
+      ui.certLetterTitle.textContent = formatMsg(LOVE_CONFIG.letterTitle);
+      ui.certLetterBody.innerHTML = "";
+      LOVE_CONFIG.letterParagraphs.forEach((pText) => {
+        const p = document.createElement("p");
+        p.textContent = formatMsg(pText);
+        ui.certLetterBody.appendChild(p);
+      });
+      ui.certLetterSign.textContent = `— ${formatMsg(LOVE_CONFIG.senderName)}`;
+      ui.certCouponText.textContent = formatMsg(LOVE_CONFIG.rewardCoupon);
+
+      showScreen("certificate");
+      // ยิงพลุชุดใหญ่เพิ่มตอนเปิดจดหมาย
+      launchFirework(window.innerWidth * 0.5, window.innerHeight * 0.25);
+      launchFirework(window.innerWidth * 0.22, window.innerHeight * 0.35);
+      launchFirework(window.innerWidth * 0.78, window.innerHeight * 0.35);
+    }
+
+    /* =========================================================================
+       10. พลุฉลองพื้นหลัง (Fireworks Particle Canvas)
+    ========================================================================= */
+    const fwCtx = ui.fireworksCanvas.getContext("2d");
+    let fwParticles = [];
+
+    function resizeFireworks() {
+      ui.fireworksCanvas.width = window.innerWidth;
+      ui.fireworksCanvas.height = window.innerHeight;
+    }
+
+    function launchFirework(x, y) {
+      const palette = ["#ff4da6", "#00f0ff", "#ffd166", "#2ee59d", "#c77dff", "#ffffff"];
+      const color = pickRandom(palette);
+      const count = 34;
+      for (let i = 0; i < count; i++) {
+        const ang = (Math.PI * 2 * i) / count + randRange(-0.1, 0.1);
+        const spd = randRange(1.8, 5.8);
+        fwParticles.push({
+          x,
+          y,
+          vx: Math.cos(ang) * spd,
+          vy: Math.sin(ang) * spd,
+          life: randRange(45, 78),
+          maxLife: 78,
+          size: randRange(2.2, 4.4),
+          color
+        });
+      }
+    }
+
+    function startFireworks() {
+      stopFireworks();
+      resizeFireworks();
+      ui.fireworksCanvas.style.display = "block";
+      fwParticles = [];
+
+      let tick = 0;
+      launchFirework(window.innerWidth * 0.3, window.innerHeight * 0.28);
+      launchFirework(window.innerWidth * 0.7, window.innerHeight * 0.32);
+
+      function step() {
+        fwCtx.clearRect(0, 0, ui.fireworksCanvas.width, ui.fireworksCanvas.height);
+        tick += 1;
+
+        if (tick % 38 === 0) {
+          launchFirework(
+            randRange(window.innerWidth * 0.15, window.innerWidth * 0.85),
+            randRange(window.innerHeight * 0.12, window.innerHeight * 0.48)
+          );
+        }
+
+        for (let i = fwParticles.length - 1; i >= 0; i--) {
+          const p = fwParticles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.055;
+          p.vx *= 0.985;
+          p.life -= 1;
+
+          if (p.life <= 0) {
+            fwParticles.splice(i, 1);
+            continue;
+          }
+
+          fwCtx.save();
+          fwCtx.globalAlpha = clamp(p.life / p.maxLife, 0, 1);
+          fwCtx.fillStyle = p.color;
+          fwCtx.shadowColor = p.color;
+          fwCtx.shadowBlur = 10;
+          fwCtx.beginPath();
+          fwCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          fwCtx.fill();
+          fwCtx.restore();
+        }
+
+        appState.fireworksRaf = requestAnimationFrame(step);
+      }
+
+      appState.fireworksRaf = requestAnimationFrame(step);
+    }
+
+    function stopFireworks() {
+      if (appState.fireworksRaf !== null) {
+        cancelAnimationFrame(appState.fireworksRaf);
+        appState.fireworksRaf = null;
+      }
+      fwParticles = [];
+      fwCtx.clearRect(0, 0, ui.fireworksCanvas.width, ui.fireworksCanvas.height);
+      ui.fireworksCanvas.style.display = "none";
+    }
+
+    /* =========================================================================
+       11. การเริ่มต้นแอปและปุ่มควบคุมหลัก
+    ========================================================================= */
+    function initStarfield() {
+      ui.starfield.innerHTML = "";
+      for (let i = 0; i < 55; i++) {
+        const star = document.createElement("span");
+        star.className = "star";
+        const sz = randRange(1.2, 3.2);
+        star.style.width = `${sz}px`;
+        star.style.height = `${sz}px`;
+        star.style.left = `${Math.random() * 100}%`;
+        star.style.top = `${Math.random() * 100}%`;
+        star.style.animationDuration = `${randRange(2, 5.5)}s`;
+        star.style.animationDelay = `${randRange(0, 5)}s`;
+        ui.starfield.appendChild(star);
+      }
+    }
+
+    function startNewQuest() {
+      SFX.init();
+      SFX.powerup();
+      appState.totalRetries = 0;
+      appState.startTime = Date.now();
+      appState.clearTimeMs = 0;
+      startStage1();
+    }
+
+    ui.btnMute.addEventListener("click", () => {
+      SFX.muted = !SFX.muted;
+      ui.muteIcon.textContent = SFX.muted ? "🔇" : "🔊";
+      ui.muteText.textContent = SFX.muted ? "เสียง: ปิด" : "เสียง: เปิด";
+      if (!SFX.muted) SFX.collect();
+    });
+
+    ui.btnStartQuest.addEventListener("click", startNewQuest);
+    ui.btnReplayAll.addEventListener("click", startNewQuest);
+
+    window.addEventListener("resize", () => {
+      if (ui.fireworksCanvas.style.display === "block") {
+        resizeFireworks();
+      }
+    });
+
+    window.addEventListener("load", () => {
+      initStarfield();
+      ui.titleGreeting.textContent = `ถึง ${LOVE_CONFIG.partnerName} — ผ่านให้ครบทั้ง 3 ด่านเพื่อรับจดหมายลับและรางวัลพิเศษ!`;
+      ui.s3BossLabel.textContent = `👾 ${LOVE_CONFIG.bossName}`;
+      ui.s1ScoreText.textContent = `0 / ${LOVE_CONFIG.stage1Target}`;
+    });
+  </script>
+</body>
+</html>
